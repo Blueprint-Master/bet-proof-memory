@@ -35,6 +35,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import gzip
 import hashlib
 import io
 import json
@@ -173,10 +174,23 @@ def metadonnees_parquet(fichier) -> dict:
 
 # --- API Opendatasoft : métadonnées et agrégats seulement -----------------
 
+def _decompresser(corps: bytes, encodage: str | None) -> bytes:
+    """Rend le corps en clair. Certains serveurs compressent en gzip même sans
+    Accept-Encoding (constaté le 19/10/2026 sur bpm-prod) : on se fie à
+    l'en-tête ET à la signature gzip (1f 8b), pas à la seule politesse du serveur."""
+    if (encodage or "").lower() == "gzip" or corps[:2] == b"\x1f\x8b":
+        return gzip.decompress(corps)
+    return corps
+
+
 def _get_json(url: str, ouvrir=urllib.request.urlopen) -> dict:
-    requete = urllib.request.Request(url, headers={"User-Agent": AGENT, "Accept": "application/json"})
+    requete = urllib.request.Request(
+        url, headers={"User-Agent": AGENT, "Accept": "application/json", "Accept-Encoding": "gzip"}
+    )
     with ouvrir(requete, timeout=DELAI_HTTP_S) as r:
-        return json.loads(r.read().decode("utf-8"))
+        entetes = getattr(r, "headers", None)
+        encodage = entetes.get("Content-Encoding") if entetes is not None else None
+        return json.loads(_decompresser(r.read(), encodage).decode("utf-8"))
 
 
 def _agregat(base: str, select: str, where: str | None, ouvrir) -> dict:

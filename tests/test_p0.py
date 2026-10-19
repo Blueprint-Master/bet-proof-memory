@@ -151,6 +151,17 @@ class TestOpendatasoft(unittest.TestCase):
         self.assertAlmostEqual(m["dates"]["date_depot_comptes"]["remplissage"], 0.95)
         self.assertEqual(m["dates"]["date_cloture_exercice"]["min"], "2014-12-31")
 
+    def test_reponse_gzip_sans_en_tete(self):
+        # Cas réel du 19/10/2026 : corps compressé, lu comme du texte, « invalid start byte ».
+        import gzip
+
+        def ouvrir(requete, timeout=None):
+            self.assertEqual(requete.headers.get("Accept-encoding"), "gzip")
+            return FausseReponse(gzip.compress(json.dumps({"fields": []}).encode()))
+
+        self.assertEqual(p0._get_json("https://ods.invalid/x", ouvrir=ouvrir), {"fields": []})
+        self.assertEqual(p0._decompresser(b'{"a": 1}', None), b'{"a": 1}')
+
     def test_aucune_requete_ne_lit_une_issue(self):
         p0.metadonnees_ods("https://ods.invalid/catalog/datasets/x", ouvrir=self._ouvrir)
         for url in self.requetes:

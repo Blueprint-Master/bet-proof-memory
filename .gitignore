@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.pyc
+# Les rapports sont publiés par leur EMPREINTE ; le fichier lui-même est versé
+# au registre explicitement, jamais par accident.
+p0-rapport-*.json

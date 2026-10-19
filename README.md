@@ -15,9 +15,11 @@ Ce dépôt tient deux rôles :
 
 | Chemin | Rôle |
 |---|---|
-| `protocole/q1-v1.1.md` | Protocole de la question 1 (défaillance à 548 jours), version en vigueur |
+| `protocole/q1-v1.2.md` | Protocole de la question 1 (défaillance à 548 jours), version en vigueur |
+| `protocole/q1-v1.1.md` | Version précédente, conservée (arrêt de P0 : aucune date de dépôt) |
 | `registre/empreintes.md` | Empreintes datées des documents et des rapports |
-| `p0/p0_faisabilite.py` | P0 : vérification de faisabilité sur les métadonnées seules |
+| `p0/p0_faisabilite.py` | P0 : schémas et métadonnées des sources |
+| `p0/p0_jointure.py` | P0 (v1.2) : part des bilans qui retrouvent leur avis de dépôt au BODACC, par année de clôture |
 | `tests/` | Tests de P0, sans accès réseau extérieur |
 
 ## Exécuter P0
@@ -31,9 +33,12 @@ python3 -m venv .venv && . .venv/bin/activate
 pip install -r requirements.txt
 python3 -m unittest discover -s tests
 python3 p0/p0_faisabilite.py
+python3 p0/p0_jointure.py
 ```
 
 Le script lit le pied du parquet des bilans détaillés par requêtes HTTP Range (quelques centaines de kilo-octets sur 2,6 Go), puis les métadonnées des API Opendatasoft. Il n'interroge aucune issue. Il écrit un rapport JSON daté et affiche son empreinte SHA-256, à reporter dans `registre/empreintes.md`.
+
+`p0_jointure.py` ne lit que des clés : (SIREN, date de clôture, confidentialité) côté bilans, (SIREN, date de clôture, date de parution) côté avis de dépôt des comptes du BODACC (famille `dpc`). Aucun montant, aucune annonce de procédure collective.
 
 ## Ce que ce dépôt ne contient pas
 

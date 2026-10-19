@@ -6,3 +6,4 @@ Chaque ligne est publiée par un commit daté AVANT tout accès aux issues conce
 |---|---|---|---|
 | 2026-10-19 | protocole/q1-v1.1.md | 698f39cea16d60ea3899b0eda84432f0b57b08756bfdec05d500f88e3b60994d | Protocole Q1 en vigueur ; aucune donnée lue |
 | 2026-10-19 | p0/p0_faisabilite.py | dddda99c9bd803cdfa861a9160c69acfdd6ad459dcc63c56337ddeca4dee71ab | Outil P0, avant sa première exécution |
+| 2026-10-19 | p0-rapport-20261019-214418.json (bpm-prod, non versé) | a2daa7b52c2d9f1327798e00e07579373aba16a1b7d6859797bab905fe4ec4b9 | Rapport P0 n° 1 : verdict « arret-sans-date » ; bilans Signaux Faibles sans date de dépôt (6 368 964 lignes, clôtures de 1919 à 2029) ; aucune issue lue |

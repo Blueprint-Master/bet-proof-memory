@@ -5,3 +5,4 @@ __pycache__/
 # au registre explicitement, jamais par accident.
 p0-rapport-*.json
 p0-jointure-*.json
+p0-remplissage-*.json

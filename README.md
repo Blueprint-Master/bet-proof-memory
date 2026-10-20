@@ -20,6 +20,7 @@ Ce dépôt tient deux rôles :
 | `registre/empreintes.md` | Empreintes datées des documents et des rapports |
 | `p0/p0_faisabilite.py` | P0 : schémas et métadonnées des sources |
 | `p0/p0_jointure.py` | P0 (v1.2) : part des bilans qui retrouvent leur avis de dépôt au BODACC, par année de clôture |
+| `p0/p0_remplissage.py` | P0 (v1.2) : remplissage de chaque champ des ratios par niveau de confidentialité (comptages seuls) |
 | `tests/` | Tests de P0, sans accès réseau extérieur |
 
 ## Exécuter P0

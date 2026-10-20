@@ -92,8 +92,33 @@ class TestGarde(unittest.TestCase):
         self.assertNotIn("listepersonnes", details["champs"])
         self.assertTrue(all("listepersonnes" not in u for u in faux.urls))
         self.assertEqual({f["fichier"] for f in fichiers},
-                         {"bodacc-dpc.parquet", "bodacc-collective.parquet",
+                         {"bodacc-dpc.parquet", "bodacc-collective.parquet", "bodacc-pcl.parquet",
                           "bodacc-conciliation.parquet", "bodacc-radiation.parquet"})
+
+    def test_familles_choisies_et_inconnues(self):
+        with tempfile.TemporaryDirectory() as d, silence():
+            fichiers, details = ex.extraire_bodacc(d, ouvrir=FauxODS(), familles=("pcl",))
+            self.assertEqual([f["fichier"] for f in fichiers], ["bodacc-pcl.parquet"])
+            self.assertIn("2022-09-30", details["requetes"]["pcl"])
+            with self.assertRaises(ValueError):
+                ex.extraire_bodacc(d, ouvrir=FauxODS(), familles=("modification",))
+
+
+class TestBdf(unittest.TestCase):
+    def test_filtre_des_series(self):
+        import pyarrow.parquet as pq
+
+        corps = ("series_key;time_period;time_period_start;obs_value;updated_at;OBS_STATUS\n"
+                 "DIREN.M.FR.DE.UL.DF.03.N.ZZ.TT;2015-01;2015-01-01;62865;2024-12-02;A\n"
+                 "DIREN.M.FR.DE.UL.DF.03.N.FZ.PM;2015-01;2015-01-01;14000;2024-12-02;A\n"
+                 "DIREN.M.FR.DE.UL.DF.04.N.ZZ.TT;2015-01;2015-01-01;5000;2024-12-02;A\n"
+                 "DIREN.M.R32.DE.UL.DF.03.N.ZZ.TT;2015-01;2015-01-01;4000;2024-12-02;A\n").encode()
+        with tempfile.TemporaryDirectory() as d, silence():
+            fichiers, details = ex.extraire_bdf(d, ouvrir=lambda req, timeout=None: Reponse(corps))
+            t = pq.read_table(os.path.join(d, "bdf-diren.parquet")).to_pydict()
+        self.assertEqual(t["series_key"], ["DIREN.M.FR.DE.UL.DF.03.N.ZZ.TT", "DIREN.M.FR.DE.UL.DF.03.N.FZ.PM"])
+        self.assertEqual(t["obs_value"], [62865.0, 14000.0])
+        self.assertEqual(t["updated_at"][0], "2024-12-02")
 
 
 class TestRatios(unittest.TestCase):

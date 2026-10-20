@@ -42,8 +42,13 @@ from p0_sources import SIRENE_UL, SIRENE_UL_HISTO, FichierAvecReprise, avec_repr
 DOSSIER_DEFAUT = os.path.expanduser("~/bpm-donnees")
 GARDE_SCELLE = dt.date(2022, 9, 30)  # première origine du scellé : rien de daté à partir de ce jour
 PREMIERE_CLOTURE = 2014
-FAMILLES_PROCEDURES = ("collective", "conciliation", "radiation")
-FAMILLES_OBLIGATOIRES = {"dpc", "collective", "radiation"}
+# Procédures collectives : code « collective » observé, « pcl » selon le schéma de la DILA ;
+# les deux sont lus (v1.0.1, constaté dans le connecteur registre_annonces).
+FAMILLES_PROCEDURES = ("collective", "pcl", "conciliation", "radiation")
+FAMILLES_TOUTES = ("dpc",) + FAMILLES_PROCEDURES
+FAMILLES_OBLIGATOIRES = {"dpc", "radiation"}  # plus : collective et pcl ne peuvent être vides ensemble
+BDF_EXPORT = "https://webstat.banque-france.fr/export/csv/fr/catalogue/diren"
+BDF_PREFIXE = "DIREN.M.FR.DE.UL.DF.03.N."
 CHAMPS_BODACC = ("id", "publicationavis", "familleavis", "familleavis_lib", "dateparution",
                  "numeroannonce", "registre", "tribunal", "jugement", "depot", "radiationaurcs")
 CLES_LIASSE = ("EE", "180", "CO-1A", "110-112")
@@ -158,14 +163,17 @@ def where_bodacc(famille: str) -> str:
     return f'familleavis="{famille}" and dateparution < date\'{GARDE_SCELLE.isoformat()}\''
 
 
-def extraire_bodacc(dossier: str, ouvrir=urllib.request.urlopen) -> tuple:
+def extraire_bodacc(dossier: str, ouvrir=urllib.request.urlopen, familles=FAMILLES_TOUTES) -> tuple:
     pa = _pa()
     presents = {f["name"] for f in avec_reprise(_get_json, BODACC, ouvrir).get("fields", [])}
     champs = [c for c in CHAMPS_BODACC if c in presents]
     manquants = [c for c in CHAMPS_BODACC if c not in presents]
     colonnes = {c: pa.string() for c in champs}
     fichiers, effectifs = [], {}
-    for famille in ("dpc",) + FAMILLES_PROCEDURES:
+    inconnues = [f for f in familles if f not in FAMILLES_TOUTES]
+    if inconnues:
+        raise ValueError(f"familles inconnues : {inconnues}")
+    for famille in familles:
         journal(f"BODACC, famille {famille}")
         select = ",".join(c for c in champs if famille == "dpc" or c != "depot")
         cols = {c: t for c, t in colonnes.items() if c in select.split(",")}
@@ -186,8 +194,10 @@ def extraire_bodacc(dossier: str, ouvrir=urllib.request.urlopen) -> tuple:
             journal(f"famille {famille!r} vide : rapportée, non bloquante")
         fichiers.append(f)
         effectifs[famille] = f["lignes"]
+    if {"collective", "pcl"} <= set(familles) and effectifs["collective"] + effectifs["pcl"] == 0:
+        raise RuntimeError("aucune procédure collective sous « collective » ni « pcl »")
     return fichiers, {"url": BODACC, "champs": champs, "champs_absents": manquants,
-                      "requetes": {f: where_bodacc(f) for f in ("dpc",) + FAMILLES_PROCEDURES}}
+                      "requetes": {f: where_bodacc(f) for f in familles}, "effectifs": effectifs}
 
 
 # --- Sirene ---------------------------------------------------------------------
@@ -297,23 +307,61 @@ def extraire_sf(dossier: str, url=SOURCE_SF_PARQUET) -> tuple:
               "octets_lus": f.octets_lus}], {"url": url, "cles_liasse": list(CLES_LIASSE)})
 
 
+# --- Banque de France (défaillances, export public du jeu DIREN) ----------------
+
+def extraire_bdf(dossier: str, ouvrir=urllib.request.urlopen, url=BDF_EXPORT) -> tuple:
+    """Séries nationales « cumul 12 mois, brut », par secteur et taille ; date de mise à jour gardée."""
+    import csv
+    import gzip
+    import io
+
+    pa = _pa()
+    cols = {"series_key": pa.string(), "time_period": pa.string(), "obs_value": pa.float64(),
+            "updated_at": pa.string(), "OBS_STATUS": pa.string()}
+
+    def lire():
+        req = urllib.request.Request(url, headers={"User-Agent": "bet-proof-memory-ingestion/1.0"})
+        r = io.BufferedReader(ouvrir(req, timeout=600))
+        if r.peek(2)[:2] == b"\x1f\x8b":
+            r = gzip.GzipFile(fileobj=r)
+        texte = io.TextIOWrapper(r, encoding="utf-8-sig", newline="")
+        echantillon = texte.readline()
+        sep = ";" if echantillon.count(";") > echantillon.count(",") else ","
+        lecteur = csv.DictReader(io.StringIO(echantillon), delimiter=sep)
+        entetes = lecteur.fieldnames
+        e = Ecrivain(os.path.join(dossier, "bdf-diren.parquet"), cols)
+        for ligne in csv.DictReader(texte, fieldnames=entetes, delimiter=sep):
+            if (ligne.get("series_key") or "").startswith(BDF_PREFIXE):
+                e.ajouter({**ligne, "obs_value": _nombre(ligne.get("obs_value"))})
+        return e.fermer(), entetes
+
+    f, entetes = avec_reprise(lire)
+    if f["lignes"] == 0:
+        raise RuntimeError(f"aucune série {BDF_PREFIXE}* dans l'export ; colonnes : {entetes}")
+    return [f], {"url": url, "prefixe": BDF_PREFIXE, "colonnes_source": entetes}
+
+
 # --- Ligne de commande ------------------------------------------------------------
 
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    p.add_argument("source", choices=["ratios", "bodacc", "sirene", "sf"])
+    p.add_argument("source", choices=["ratios", "bodacc", "sirene", "sf", "bdf"])
+    p.add_argument("--familles", default=",".join(FAMILLES_TOUTES), help="BODACC seulement")
     p.add_argument("--dossier", default=DOSSIER_DEFAUT)
     a = p.parse_args(argv)
     os.makedirs(a.dossier, exist_ok=True)
     if a.source == "ratios":
         fichiers, details = extraire_ratios(a.dossier, range(PREMIERE_CLOTURE, dt.date.today().year + 1))
     elif a.source == "bodacc":
-        fichiers, details = extraire_bodacc(a.dossier)
+        fichiers, details = extraire_bodacc(a.dossier, familles=tuple(x for x in a.familles.split(",") if x))
     elif a.source == "sirene":
         fichiers, details = extraire_sirene(a.dossier)
+    elif a.source == "bdf":
+        fichiers, details = extraire_bdf(a.dossier)
     else:
         fichiers, details = extraire_sf(a.dossier)
-    chemin, h = ecrire_manifeste(a.dossier, a.source, fichiers, details)
+    nom = a.source if a.source != "bodacc" or a.familles == ",".join(FAMILLES_TOUTES) else "bodacc-" + a.familles.replace(",", "-")
+    chemin, h = ecrire_manifeste(a.dossier, nom, fichiers, details)
     for f in fichiers:
         print(f"{f['fichier']} : {f['lignes']} lignes", file=sys.stderr)
     print(f"\nManifeste : {chemin}\nSHA-256 : {h}", file=sys.stderr)

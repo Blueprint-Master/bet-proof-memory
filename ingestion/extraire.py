@@ -127,10 +127,18 @@ def ecrire_manifeste(dossier: str, source: str, fichiers: list, details: dict) -
 
 
 def _nombre(v):
+    """Nombre lu tel quel ou au format français (virgule décimale, espaces de milliers) (v1.0.3)."""
     if v in (None, ""):
         return None
-    try:
+    if isinstance(v, (int, float)):
         return float(v)
+    s = str(v).strip()
+    for esp in (" ", "\u00a0", "\u202f"):
+        s = s.replace(esp, "")
+    if "," in s and "." not in s:
+        s = s.replace(",", ".")
+    try:
+        return float(s)
     except ValueError:
         return None
 
@@ -391,12 +399,17 @@ def extraire_bdf(dossier: str, ouvrir=urllib.request.urlopen, url=BDF_EXPORT) ->
         e = Ecrivain(os.path.join(dossier, "bdf-diren.parquet"), cols)
         for ligne in csv.DictReader(texte, fieldnames=entetes, delimiter=sep):
             if (ligne.get("series_key") or "").startswith(BDF_PREFIXE):
-                e.ajouter({**ligne, "obs_value": _nombre(ligne.get("obs_value"))})
+                brut = ligne.get("obs_value") if "obs_value" in ligne else ligne.get("OBS_VALUE")
+                e.ajouter({**ligne, "obs_value": _nombre(brut)})
         return e.fermer(), entetes
 
     f, entetes = avec_reprise(lire)
     if f["lignes"] == 0:
         raise RuntimeError(f"aucune série {BDF_PREFIXE}* dans l'export ; colonnes : {entetes}")
+    import pyarrow.parquet as pq
+    valeurs = pq.read_table(os.path.join(dossier, "bdf-diren.parquet"), columns=["obs_value"]).column("obs_value")
+    if valeurs.null_count == len(valeurs):
+        raise RuntimeError("aucune valeur numérique lue dans les séries DIREN : format des nombres à vérifier")
     return [f], {"url": url, "prefixe": BDF_PREFIXE, "colonnes_source": entetes}
 
 

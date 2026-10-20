@@ -566,6 +566,7 @@ def construire(dossier: str, sortie, origines=ORIGINES_DEV, seuil=SEUIL_COUVERTU
             naf2 = naf[:2] if naf and nom == "NAFRev2" else None
             sect, taille = secteur_bdf(naf2), taille_bdf(total, ca)
             inten, cle = intensite(series, sect, taille, t0) if sect else (None, None)
+            rapport[str(a)]["intensite_absente"] = rapport[str(a)].get("intensite_absente", 0) + int(inten is None)
             conf = R.conf[i] or ""
             l = {"siren": s, "origine": a, "t0": t0, "cloture": c, "parution_avis": p,
                  "type_bilan": R.type[i], "confidentialite": conf,
@@ -591,6 +592,10 @@ def construire(dossier: str, sortie, origines=ORIGINES_DEV, seuil=SEUIL_COUVERTU
             rn = v("resultat_net")
             l["resultat_net_sur_total_bilan"] = rn / total if cr_dispo and total and rn is not None else 0.0
             lignes.append(l)
+        absente = rapport[str(a)].get("intensite_absente", 0)
+        if rapport[str(a)]["retenue"] and lignes and absente == len(lignes):
+            # v1.0.4 : l'intensité sectorielle (annexe A, groupe 4) ne peut pas manquer partout.
+            raise RuntimeError(f"origine {a} : intensité sectorielle absente pour tous les cas (séries DIREN illisibles)")
         sortie.ecrire(lignes)
         total_lignes += len(lignes)
     return total_lignes, {"origines": rapport, "bilans_exclus": motifs_bilans, "natures_jugements": info["natures"],

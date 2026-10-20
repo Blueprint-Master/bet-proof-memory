@@ -148,6 +148,25 @@ class TestBdf(unittest.TestCase):
         self.assertEqual(t["obs_value"], [62865.0, 14000.0])
         self.assertEqual(t["updated_at"][0], "2024-12-02")
 
+    def test_nombres_au_format_francais(self):
+        import pyarrow.parquet as pq
+
+        corps = ("series_key;time_period;obs_value;updated_at;OBS_STATUS\n"
+                 "DIREN.M.FR.DE.UL.DF.03.N.ZZ.TT;2015-01;62\u202f865,0;2024-12-02;A\n"
+                 "DIREN.M.FR.DE.UL.DF.03.N.FZ.PM;2015-01;14000,5;2024-12-02;A\n"
+                 "DIREN.M.FR.DE.UL.DF.03.N.FZ.TT;2015-01;;2024-12-02;A\n").encode()
+        with tempfile.TemporaryDirectory() as d, silence():
+            ex.extraire_bdf(d, ouvrir=lambda req, timeout=None: Reponse(corps))
+            t = pq.read_table(os.path.join(d, "bdf-diren.parquet")).to_pydict()
+        self.assertEqual(t["obs_value"], [62865.0, 14000.5, None])
+
+    def test_aucune_valeur_lue_bloque(self):
+        corps = ("series_key;time_period;obs_value;updated_at;OBS_STATUS\n"
+                 "DIREN.M.FR.DE.UL.DF.03.N.ZZ.TT;2015-01;n/a;2024-12-02;A\n").encode()
+        with tempfile.TemporaryDirectory() as d, silence():
+            with self.assertRaisesRegex(RuntimeError, "aucune valeur"):
+                ex.extraire_bdf(d, ouvrir=lambda req, timeout=None: Reponse(corps))
+
 
 class TestRatios(unittest.TestCase):
     def test_types_et_manifeste(self):

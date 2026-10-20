@@ -15,8 +15,8 @@ Ce dépôt tient deux rôles :
 
 | Chemin | Rôle |
 |---|---|
-| `protocole/q1-v1.5.md` | Protocole de la question 1 (défaillance à 548 jours), version en vigueur |
-| `protocole/q1-v1.4.md`, `q1-v1.3.md`, `q1-v1.2.md`, `q1-v1.1.md` | Versions précédentes, conservées ; chaque amendement est motivé dans le journal de la version suivante |
+| `protocole/q1-v1.6.md` | Protocole de la question 1 (défaillance à 548 jours), version en vigueur |
+| `protocole/q1-v1.5.md`, `q1-v1.4.md`, `q1-v1.3.md`, `q1-v1.2.md`, `q1-v1.1.md` | Versions précédentes, conservées ; chaque amendement est motivé dans le journal de la version suivante |
 | `registre/empreintes.md` | Empreintes datées des documents et des rapports |
 | `p0/p0_faisabilite.py` | P0 : schémas et métadonnées des sources |
 | `p0/p0_jointure.py` | P0 (v1.2) : part des bilans qui retrouvent leur avis de dépôt au BODACC, par année de clôture |

@@ -104,6 +104,34 @@ class TestGarde(unittest.TestCase):
                 ex.extraire_bodacc(d, ouvrir=FauxODS(), familles=("modification",))
 
 
+class TestModifications(unittest.TestCase):
+    def test_categories_seules(self):
+        import pyarrow.parquet as pq
+
+        corps = ('dateparution;registre;modificationsgenerales\n'
+                 '2019-01-05;302237748;"{""descriptif"": ""Dissolution anticipée de la société à compter du..."" }"\n'
+                 '2019-02-05;310656384;"{""descriptif"": ""Fusion par absorption de la société X""}"\n'
+                 '2019-03-05;312411416;"{""descriptif"": ""Nomination de M. Dupont en qualité de gérant""}"\n').encode()
+        urls = []
+
+        def ouvrir(req, timeout=None):
+            urls.append(urllib.parse.unquote_plus(req.full_url))
+            return Reponse(corps)
+        with tempfile.TemporaryDirectory() as d, silence():
+            fichiers, details = ex.extraire_modifications(d, ouvrir=ouvrir)
+            t = pq.read_table(os.path.join(d, "bodacc-modification-evenements.parquet")).to_pydict()
+        self.assertEqual(t["evenement"], ["dissolution", "fusion"])
+        self.assertEqual(set(t), {"dateparution", "registre", "evenement"})  # aucun descriptif conservé
+        self.assertEqual(details["avis_lus"], 3)
+        self.assertIn("dateparution < date'2022-09-30'", urls[0])
+
+    def test_garde(self):
+        corps = b'dateparution;registre;modificationsgenerales\n2023-01-05;302237748;"{}"\n'
+        with tempfile.TemporaryDirectory() as d, silence():
+            with self.assertRaisesRegex(RuntimeError, "garde"):
+                ex.extraire_modifications(d, ouvrir=lambda req, timeout=None: Reponse(corps))
+
+
 class TestBdf(unittest.TestCase):
     def test_filtre_des_series(self):
         import pyarrow.parquet as pq

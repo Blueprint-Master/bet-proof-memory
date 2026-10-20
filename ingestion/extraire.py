@@ -28,6 +28,7 @@ import argparse
 import datetime as dt
 import hashlib
 import json
+import re
 import os
 import sys
 import urllib.parse
@@ -51,7 +52,14 @@ BDF_EXPORT = "https://webstat.banque-france.fr/export/csv/fr/catalogue/diren"
 BDF_PREFIXE = "DIREN.M.FR.DE.UL.DF.03.N."
 CHAMPS_BODACC = ("id", "publicationavis", "familleavis", "familleavis_lib", "dateparution",
                  "numeroannonce", "registre", "tribunal", "jugement", "depot", "radiationaurcs")
-CLES_LIASSE = ("EE", "180", "CO-1A", "110-112")
+# Totaux de bilan (v1.0) et composantes du Z'' d'Altman approché (v1.0.2), codes de la
+# documentation technique des comptes annuels de l'INPI (v1.8) : complet CJ-CK actif
+# circulant net, DD à DH réserves et report à nouveau, DL capitaux propres, DS à DV dettes
+# financières, EC total des dettes, GG résultat d'exploitation ; simplifié 096 actif
+# circulant, 126 à 134 réserves et report à nouveau, 142 capitaux propres, 156 emprunts,
+# 176 total des dettes, 270 résultat d'exploitation.
+CLES_LIASSE = ("EE", "180", "CO-1A", "110-112", "CJ-CK", "DD", "DE", "DF", "DG", "DH", "DL", "DS", "DT",
+               "DU", "DV", "EC", "GG", "096", "126", "130", "132", "134", "142", "156", "176", "270")
 LOT = 200_000
 
 
@@ -200,6 +208,49 @@ def extraire_bodacc(dossier: str, ouvrir=urllib.request.urlopen, familles=FAMILL
                       "requetes": {f: where_bodacc(f) for f in familles}, "effectifs": effectifs}
 
 
+# --- BODACC, modifications : dissolutions et fusions seulement (v1.0.2) ----------
+
+MOTIF_DISSOLUTION = re.compile(r"dissolution", re.I)
+MOTIF_FUSION = re.compile(r"fusion|absorption|transmission universelle", re.I)
+
+
+def evenement_modification(modif) -> str | None:
+    """Catégorie d'un avis de modification : « fusion », « dissolution » ou rien.
+
+    Seule la catégorie est conservée ; le descriptif, qui peut nommer des personnes,
+    n'est pas stocké (minimisation)."""
+    texte = modif if isinstance(modif, str) else json.dumps(modif or {}, ensure_ascii=False)
+    if MOTIF_FUSION.search(texte):
+        return "fusion"
+    if MOTIF_DISSOLUTION.search(texte):
+        return "dissolution"
+    return None
+
+
+def extraire_modifications(dossier: str, ouvrir=urllib.request.urlopen) -> tuple:
+    pa = _pa()
+    where = f'familleavis="modification" and dateparution < date\'{GARDE_SCELLE.isoformat()}\''
+    cols = {"dateparution": pa.string(), "registre": pa.string(), "evenement": pa.string()}
+
+    def lire():
+        e, lus = Ecrivain(os.path.join(dossier, "bodacc-modification-evenements.parquet"), cols), 0
+        for ligne in flux_csv(BODACC, "dateparution,registre,modificationsgenerales", where, ouvrir):
+            lus += 1
+            d = (ligne.get("dateparution") or "")[:10]
+            if not d or d >= GARDE_SCELLE.isoformat():
+                raise RuntimeError(f"garde du scellé violée par la source : parution {d!r}")
+            ev = evenement_modification(ligne.get("modificationsgenerales"))
+            if ev:
+                e.ajouter({"dateparution": d, "registre": ligne.get("registre"), "evenement": ev})
+        return e.fermer(), lus
+
+    f, lus = avec_reprise(lire)
+    if lus == 0:
+        raise RuntimeError("famille « modification » vide : code de famille à vérifier")
+    return [f], {"url": BODACC, "requete": where, "avis_lus": lus,
+                 "regle": "catégorie seule (fusion, dissolution) ; descriptif non conservé"}
+
+
 # --- Sirene ---------------------------------------------------------------------
 
 def sirens_des_ratios(dossier: str) -> "object":
@@ -260,6 +311,7 @@ def extraire_sirene(dossier: str, url_ul=SIRENE_UL, url_histo=SIRENE_UL_HISTO) -
 
 def extraire_sf(dossier: str, url=SOURCE_SF_PARQUET) -> tuple:
     """Clés et totaux de bilan seuls ; la liasse est filtrée en vectoriel, clé par clé."""
+    import numpy as np
     import pyarrow as pa
     import pyarrow.compute as pc
     import pyarrow.parquet as pq
@@ -270,7 +322,7 @@ def extraire_sf(dossier: str, url=SOURCE_SF_PARQUET) -> tuple:
     schema = pa.schema([("siren", pa.string()), ("date_cloture_exercice", pa.date32()),
                         ("type_bilan", pa.string()), ("confidentiality", pa.string())]
                        + [(k, pa.float64()) for k in CLES_LIASSE])
-    ecrivain, lignes = pq.ParquetWriter(sortie, schema), 0
+    ecrivain, lignes, presence, bilans_par_type = pq.ParquetWriter(sortie, schema), 0, {}, {}
     for g in range(pf.metadata.num_row_groups):
         if g % 20 == 0:
             journal(f"bilans détaillés, groupe {g + 1}/{pf.metadata.num_row_groups}")
@@ -279,21 +331,25 @@ def extraire_sf(dossier: str, url=SOURCE_SF_PARQUET) -> tuple:
         liasse = t.column("liasse").combine_chunks()
         # Indice de ligne de chaque entrée de la liasse, par les décalages (offsets) ;
         # list_parent_indices n'accepte pas le type map dans toutes les versions.
-        import numpy as np
 
         off = liasse.offsets.to_numpy(zero_copy_only=False)
         parents = pa.array(np.repeat(np.arange(len(off) - 1), np.diff(off)))
         debut, fin = int(off[0]), int(off[-1])
         cles, valeurs = liasse.keys.slice(debut, fin - debut), liasse.items.slice(debut, fin - debut)
         colonnes = {}
+        types = t.column("type_bilan").to_pylist()
         for k in CLES_LIASSE:
             masque = pc.equal(cles, k)
-            idx = pc.filter(parents, masque).to_numpy(zero_copy_only=False)
-            val = pc.filter(valeurs, masque).to_numpy(zero_copy_only=False)
-            col = [None] * t.num_rows
-            for i, v in zip(idx, val):
-                col[int(i)] = float(v)
-            colonnes[k] = pa.array(col, type=pa.float64())
+            idx = pc.filter(parents, masque).to_numpy(zero_copy_only=False).astype("int64")
+            val = pc.filter(valeurs, masque).to_numpy(zero_copy_only=False).astype("float64")
+            col = np.full(t.num_rows, np.nan)
+            col[idx] = val
+            colonnes[k] = pa.array(col, mask=np.isnan(col), type=pa.float64())
+            for i in idx:
+                cle_t = f"{types[int(i)]}:{k}"
+                presence[cle_t] = presence.get(cle_t, 0) + 1
+        for typ in types:
+            bilans_par_type[typ] = bilans_par_type.get(typ, 0) + 1
         sortie_t = pa.table({
             "siren": pc.cast(t.column("siren"), pa.string()),
             "date_cloture_exercice": pc.cast(t.column("date_cloture_exercice"), pa.date32()),
@@ -304,7 +360,10 @@ def extraire_sf(dossier: str, url=SOURCE_SF_PARQUET) -> tuple:
         lignes += t.num_rows
     ecrivain.close()
     return ([{"fichier": os.path.basename(sortie), "lignes": lignes, "sha256": sha256_fichier(sortie),
-              "octets_lus": f.octets_lus}], {"url": url, "cles_liasse": list(CLES_LIASSE)})
+              "octets_lus": f.octets_lus}],
+            {"url": url, "cles_liasse": list(CLES_LIASSE), "bilans_par_type": bilans_par_type,
+             "remplissage_par_type": {k: round(v / bilans_par_type[k.split(":")[0]], 4)
+                                      for k, v in sorted(presence.items())}})
 
 
 # --- Banque de France (défaillances, export public du jeu DIREN) ----------------
@@ -345,7 +404,7 @@ def extraire_bdf(dossier: str, ouvrir=urllib.request.urlopen, url=BDF_EXPORT) ->
 
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    p.add_argument("source", choices=["ratios", "bodacc", "sirene", "sf", "bdf"])
+    p.add_argument("source", choices=["ratios", "bodacc", "sirene", "sf", "bdf", "modifications"])
     p.add_argument("--familles", default=",".join(FAMILLES_TOUTES), help="BODACC seulement")
     p.add_argument("--dossier", default=DOSSIER_DEFAUT)
     a = p.parse_args(argv)
@@ -356,6 +415,8 @@ def main(argv=None) -> int:
         fichiers, details = extraire_bodacc(a.dossier, familles=tuple(x for x in a.familles.split(",") if x))
     elif a.source == "sirene":
         fichiers, details = extraire_sirene(a.dossier)
+    elif a.source == "modifications":
+        fichiers, details = extraire_modifications(a.dossier)
     elif a.source == "bdf":
         fichiers, details = extraire_bdf(a.dossier)
     else:

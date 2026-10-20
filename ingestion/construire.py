@@ -8,9 +8,11 @@ Lit les instantanés de l'étape 1 (dossier de données) et écrit :
 
 Règles appliquées, par article du protocole :
   P1    forme juridique (historique Sirene valide à t0), création antérieure à t0,
-        aucune radiation parue avant t0, aucune procédure collective ouverte et
-        non close (lecture stricte : seul un jugement de clôture clôt ; une société
-        en exécution de plan reste donc exclue), au moins un bilan connu à t0.
+        aucune radiation parue avant t0, au moins un bilan connu à t0, et pas de
+        défaillance en cours (v1.0.2, protocole v1.6) : sont exclues les sociétés en
+        observation de redressement, en liquidation, ou dont l'ouverture n'est pas
+        identifiable ; sont incluses, avec un indicateur, celles en observation de
+        sauvegarde et celles en exécution d'un plan (sauvegarde, redressement).
         Un jugement d'ouverture daté avant t0 mais paru après t0 écarte le cas
         (compté à part) : il était inéligible en réalité, sans qu'on le sache.
   P2    bilan connu à t0 : avis de dépôt des comptes paru avant t0, retrouvé par
@@ -21,9 +23,11 @@ Règles appliquées, par article du protocole :
         variables du groupe 2 neutralisées à 0 et indicateur à 1.
   P2 quater  comptes sociaux (C préféré à S) ; consolidés (K) écartés ; total de
         bilan = EE (C) ou 180 (S).
-  P3    issue = premier jugement d'ouverture de redressement ou de liquidation
-        judiciaire daté dans ]t0, t0 + 548 jours] ; sauvegarde et radiation
-        sans procédure rapportées à part.
+  P3    issue = premier jugement d'entrée en redressement ou en liquidation judiciaire
+        (ouverture, conversion d'une sauvegarde, résolution d'un plan) daté dans
+        ]t0, t0 + 548 jours] ; sauvegarde, radiation sans procédure, dissolution et
+        fusion rapportées à part.
+  R1    composantes du Z'' d'Altman approché, lues dans la liasse (v1.0.2).
   P4    couverture : origine retenue si les sociétés de P1 ayant un bilan connu
         à t0 sont au moins 346 859 ; origines 2008 à 2020 seulement (la 2021
         est le tampon, les suivantes relèvent du scellé ou du prospectif).
@@ -118,6 +122,58 @@ class Ratios:
         return None if v != v else float(v)
 
 
+def _num(table, nom):
+    import numpy as np
+
+    if nom not in table.column_names:
+        return np.full(table.num_rows, np.nan)
+    return np.asarray(table.column(nom).to_numpy(zero_copy_only=False), dtype="float64")
+
+
+def composantes_liasse(sf) -> dict:
+    """{(siren, clôture, type): (total de bilan, (X1, X2, X3, X4))} : Z'' d'Altman approché (v1.0.2).
+
+    X1 = (actif circulant − dettes non financières) / total ; dettes non financières =
+    total des dettes − dettes financières (approximation des dettes à court terme).
+    X2 = (réserves + report à nouveau) / total. X3 = résultat d'exploitation / total.
+    X4 = capitaux propres / total des dettes. Total = total du passif.
+    Complet (C) : CJ-CK, EC, DS+DT+DU+DV, DD à DH, GG, DL, EE.
+    Simplifié (S) : 096, 176, 156, 126+130+132+134, 270, 142, 180.
+    Une composante dont un terme essentiel manque est absente (None) ; les postes
+    d'une somme absents de la liasse valent zéro.
+    """
+    import numpy as np
+
+    g = lambda n: _num(sf, n)  # noqa: E731
+    z = lambda a: np.nan_to_num(a, nan=0.0)  # noqa: E731
+    typ = np.asarray(sf.column("type_bilan").to_pylist(), dtype=object)
+    est_c = typ == "C"
+    total = np.where(est_c, g("EE"), g("180"))
+    ac = np.where(est_c, g("CJ-CK"), g("096"))
+    dettes = np.where(est_c, g("EC"), g("176"))
+    dettes_fin = np.where(est_c, z(g("DS")) + z(g("DT")) + z(g("DU")) + z(g("DV")), z(g("156")))
+    reserves = np.where(est_c, z(g("DD")) + z(g("DE")) + z(g("DF")) + z(g("DG")) + z(g("DH")),
+                        z(g("126")) + z(g("130")) + z(g("132")) + z(g("134")))
+    rex = np.where(est_c, g("GG"), g("270"))
+    cp = np.where(est_c, g("DL"), g("142"))
+    with np.errstate(divide="ignore", invalid="ignore"):
+        tot_ok = np.where(total > 0, total, np.nan)
+        x1 = (ac - (dettes - dettes_fin)) / tot_ok
+        x2 = reserves / tot_ok
+        x3 = rex / tot_ok
+        x4 = cp / np.where(dettes > 0, dettes, np.nan)
+    v = lambda a, k: None if a[k] != a[k] or abs(a[k]) == np.inf else float(a[k])  # noqa: E731
+    out = {}
+    sirens = sf.column("siren").to_pylist()
+    clotures = sf.column("date_cloture_exercice").to_pylist()
+    for k in range(sf.num_rows):
+        if typ[k] not in ("C", "S") or not sirens[k]:
+            continue
+        out[(str(sirens[k]).zfill(9), str(clotures[k])[:10], typ[k])] = (
+            v(total, k), (v(x1, k), v(x2, k), v(x3, k), v(x4, k)))
+    return out
+
+
 def bilans_dates(dossier: str, aujourdhui: dt.date) -> tuple:
     """Bilans sociaux datés par leur avis de dépôt : {siren: [(cloture, parution, indice, total), ...]}."""
     table, chemins = _lire(dossier, "ratios-*.parquet", list(COLONNES_RATIOS))
@@ -136,13 +192,7 @@ def bilans_dates(dossier: str, aujourdhui: dt.date) -> tuple:
     del dpc
     journal(f"{len(avis)} couples (SIREN, clôture) avec avis de dépôt")
     sf, c3 = _lire(dossier, "sf-totaux.parquet")
-    totaux = {}
-    for s, c, t, ee, t180 in zip(sf.column("siren").to_pylist(), sf.column("date_cloture_exercice").to_pylist(),
-                                 sf.column("type_bilan").to_pylist(), sf.column("EE").to_pylist(),
-                                 sf.column("180").to_pylist()):
-        v = ee if t == "C" else t180 if t == "S" else None
-        if v is not None and s:
-            totaux[(str(s).zfill(9), str(c)[:10], t)] = v
+    totaux = composantes_liasse(sf)
     del sf
     motifs = {"consolides": 0, "doublon_type": 0, "sans_avis": 0, "cloture_avant_2000": 0,
               "cloture_future": 0, "cloture_apres_parution": 0, "sans_siren": 0}
@@ -175,7 +225,8 @@ def bilans_dates(dossier: str, aujourdhui: dt.date) -> tuple:
         elif c > p:
             motifs["cloture_apres_parution"] += 1
         else:
-            par_siren.setdefault(s, []).append((c, p, i, totaux.get((s, c_iso, R.type[i]))))
+            tot, zc = totaux.get((s, c_iso, R.type[i]), (None, (None, None, None, None)))
+            par_siren.setdefault(s, []).append((c, p, (i, zc), tot))
     for v in par_siren.values():
         v.sort(key=lambda x: x[0])
     return R, par_siren, motifs, chemins + c2 + c3
@@ -207,6 +258,13 @@ def periode_a(periodes: list, t0: dt.date):
 # liquidation judiciaire d'une société qui n'y était pas).
 OUVRANTS = {"OUV-LJ", "OUV-RJ", "OUV-SAUV", "OUV-INDET", "CONV-SAUV-LJ", "CONV-SAUV-RJ",
             "RESOL-LJ", "REOUV"}
+# État de la société après chaque nature (v1.0.2). Seuls RJ, LJ et INDET excluent :
+# la société a déjà défailli (ou on ne peut pas le savoir), la question ne se pose pas.
+# En observation de sauvegarde ou en plan, elle fonctionne : la question se pose.
+ETAT_APRES = {"OUV-RJ": "RJ", "CONV-SAUV-RJ": "RJ", "OUV-LJ": "LJ", "CONV-SAUV-LJ": "LJ", "RESOL-LJ": "LJ",
+              "REOUV": "LJ", "OUV-SAUV": "SAUV", "OUV-INDET": "INDET", "PLAN": "PLAN", "CLOT": None}
+ETATS_EXCLUANTS = {"RJ", "LJ", "INDET"}
+NATURES_EXCLUANTES = {n for n, e in ETAT_APRES.items() if e in ETATS_EXCLUANTS}
 ISSUES = {"OUV-LJ", "OUV-RJ", "CONV-SAUV-LJ", "CONV-SAUV-RJ", "RESOL-LJ"}
 
 
@@ -226,8 +284,9 @@ def classer_jugement(jugement) -> tuple:
     OUV-LJ, OUV-RJ, OUV-SAUV : jugements d'ouverture ; OUV-INDET : ouverture dont la
     procédure n'est nommée ni dans la nature ni dans le complément ; CONV-SAUV-LJ et
     CONV-SAUV-RJ : conversion d'une sauvegarde ; RESOL-LJ : résolution d'un plan et
-    liquidation ; REOUV : reprise d'une liquidation clôturée ; CLOT : clôture ou fin de
-    la procédure ; ANNULE ; AUTRE (conversions de redressement en liquidation, plans,
+    liquidation ; REOUV : reprise d'une liquidation clôturée ; PLAN : plan de sauvegarde,
+    de redressement ou de continuation arrêté ou modifié (pas de cession) ; CLOT : clôture
+    ou fin de la procédure ; ANNULE ; AUTRE (conversions de redressement en liquidation,
     états des créances, sanctions personnelles...).
     """
     j = jugement
@@ -248,6 +307,9 @@ def classer_jugement(jugement) -> tuple:
         return "REOUV", date
     if "résolution du plan" in nature and "liquidation" in nature:
         return "RESOL-LJ", date
+    if any(k in nature for k in ("plan de redressement", "plan de sauvegarde", "plan de continuation")) \
+            and "cession" not in nature:
+        return "PLAN", date
     if "conversion" in nature and "sauvegarde" in nature:
         if "liquidation" in nature:
             return "CONV-SAUV-LJ", date
@@ -303,6 +365,22 @@ def procedures(dossier: str) -> tuple[dict, dict, list]:
                 raise RuntimeError("radiation postérieure à la garde du scellé dans les instantanés")
             radiations[s] = min(p, radiations.get(s, p))
     return evenements, {"radiations": radiations, "natures": natures, "exemples_ouv_indet": exemples}, chemins + c
+
+
+def modifications(dossier: str) -> tuple[dict, list]:
+    """Dissolutions et fusions (événements concurrents de P3), datées par leur parution."""
+    t, c = _lire(dossier, "bodacc-modification-evenements.parquet")
+    ev = {}
+    for r, p, e in zip(t.column("registre").to_pylist(), t.column("dateparution").to_pylist(),
+                       t.column("evenement").to_pylist()):
+        s, p = _siren(r), _date(p)
+        if s and p:
+            if p >= GARDE_SCELLE:
+                raise RuntimeError("modification postérieure à la garde du scellé dans les instantanés")
+            ev.setdefault(s, []).append((p, e))
+    for v in ev.values():
+        v.sort()
+    return ev, c
 
 
 def bdf(dossier: str) -> tuple[dict, list]:
@@ -372,6 +450,7 @@ def construire(dossier: str, sortie, origines=ORIGINES_DEV, seuil=SEUIL_COUVERTU
     journal("procédures et radiations")
     evts, info, e3 = procedures(dossier)
     series, e4 = bdf(dossier)
+    modifs, e5 = modifications(dossier)
     radiations = info["radiations"]
     rapport, total_lignes = {}, 0
     for a in origines:
@@ -403,18 +482,23 @@ def construire(dossier: str, sortie, origines=ORIGINES_DEV, seuil=SEUIL_COUVERTU
             if s in radiations and radiations[s] < t0:
                 m["radiee"] += 1
                 continue
-            ouverte = False
+            etat = None
             for pe, _dj, n in evts.get(s, []):
                 if pe >= t0:
                     break
-                ouverte = True if n in OUVRANTS else False if n == "CLOT" else ouverte
-            if ouverte:
+                if n in ETAT_APRES:
+                    # Un plan ne s'arrête que sur une procédure de sauvegarde ou de redressement.
+                    if n == "PLAN" and etat not in ("RJ", "SAUV", "PLAN"):
+                        continue
+                    etat = ETAT_APRES[n]
+            if etat in ETATS_EXCLUANTS:
                 m["procedure_en_cours"] += 1
+                m[f"exclus_etat_{etat}"] = m.get(f"exclus_etat_{etat}", 0) + 1
                 continue
             # P1 vise un jugement d'ouverture ANTÉRIEUR à t0. Un jugement daté avant t0 mais
             # paru après t0 rend le cas inéligible en réalité, sans qu'on puisse le savoir à t0 :
             # le cas est écarté et compté, plutôt qu'étiqueté « sans défaillance ».
-            if any(n in OUVRANTS and dj <= t0 <= pe for pe, dj, n in evts.get(s, [])):
+            if any(n in NATURES_EXCLUANTES and dj <= t0 <= pe for pe, dj, n in evts.get(s, [])):
                 m["ouverture_anterieure_publiee_apres_t0"] += 1
                 continue
             m["eligibles"] += 1
@@ -428,17 +512,22 @@ def construire(dossier: str, sortie, origines=ORIGINES_DEV, seuil=SEUIL_COUVERTU
                     elif n == "OUV-INDET":
                         indet = 1
             rad = int(not issue and s in radiations and t0 <= radiations[s] <= fin)
+            conc = next((ev for d_ev, ev in modifs.get(s, []) if t0 < d_ev <= fin), None) if not issue else None
+            m["en_plan"] = m.get("en_plan", 0) + int(etat == "PLAN")
+            m["en_observation_sauvegarde"] = m.get("en_observation_sauvegarde", 0) + int(etat == "SAUV")
+            if conc:
+                m[f"concurrent_{conc}"] = m.get(f"concurrent_{conc}", 0) + 1
             m["defaillances"] += issue
             m["sauvegardes"] += sauv
             m["ouvertures_indeterminees"] += int(indet and not issue)
             m["radiations_sans_procedure"] += rad
-            cas.append((s, c, p, b, total, cj, naf, nom, cr, issue, date_issue, sauv, rad))
+            cas.append((s, c, p, b, total, cj, naf, nom, cr, issue, date_issue, sauv, rad, etat, conc))
         m["couverture"] = m["eligibles"]
         m["retenue"] = m["eligibles"] >= seuil
         rapport[str(a)] = m
         journal(f"origine {a} : {m['eligibles']} cas, retenue={m['retenue']}")
         lignes = []
-        for s, c, p, i, total, cj, naf, nom, cr, issue, date_issue, sauv, rad in cas:
+        for s, c, p, (i, zc), total, cj, naf, nom, cr, issue, date_issue, sauv, rad, etat, conc in cas:
             v = lambda col: R.valeur(col, i)  # noqa: E731
             cr_dispo = v("marge_ebe") is not None
             ca = v("chiffre_d_affaires") if cr_dispo else None
@@ -458,7 +547,10 @@ def construire(dossier: str, sortie, origines=ORIGINES_DEV, seuil=SEUIL_COUVERTU
                  "vetuste_absente": int(v("ratio_de_vetuste") is None),
                  "intensite_sectorielle": inten, "serie_bdf": cle, "secteur_bdf": sect, "taille_bdf": taille,
                  "origine_retenue": int(rapport[str(a)]["retenue"]),
-                 "issue": issue, "date_issue": date_issue, "sauvegarde": sauv, "radiation_sans_procedure": rad}
+                 "issue": issue, "date_issue": date_issue, "sauvegarde": sauv, "radiation_sans_procedure": rad,
+                 "en_plan": int(etat == "PLAN"), "en_observation_sauvegarde": int(etat == "SAUV"),
+                 "evenement_concurrent": conc,
+                 "altman_x1": zc[0], "altman_x2": zc[1], "altman_x3": zc[2], "altman_x4": zc[3]}
             for col in GROUPE1:
                 l[col] = v(col)
             for col in GROUPE2:
@@ -472,7 +564,7 @@ def construire(dossier: str, sortie, origines=ORIGINES_DEV, seuil=SEUIL_COUVERTU
     return total_lignes, {"origines": rapport, "bilans_exclus": motifs_bilans, "natures_jugements": info["natures"],
                     "exemples_ouvertures_indeterminees": info["exemples_ouv_indet"],
                     "seuil_couverture": seuil, "horizon_jours": HORIZON_JOURS,
-                    "entrees": sorted(set(e1 + e2 + e3 + e4))}
+                    "entrees": sorted(set(e1 + e2 + e3 + e4 + e5))}
 
 
 def schema_cas():
@@ -485,7 +577,8 @@ def schema_cas():
               ("total_bilan_absent", i), ("cr_indisponible", i), ("capitaux_propres_negatifs", i),
               ("vetuste_absente", i), ("intensite_sectorielle", f), ("serie_bdf", st), ("secteur_bdf", st),
               ("taille_bdf", st), ("origine_retenue", i), ("issue", i), ("date_issue", d), ("sauvegarde", i),
-              ("radiation_sans_procedure", i)]
+              ("radiation_sans_procedure", i), ("en_plan", i), ("en_observation_sauvegarde", i),
+              ("evenement_concurrent", st), ("altman_x1", f), ("altman_x2", f), ("altman_x3", f), ("altman_x4", f)]
     champs += [(c, f) for c in GROUPE1 + GROUPE2] + [("log_chiffre_affaires", f),
                                                      ("resultat_net_sur_total_bilan", f)]
     return pa.schema(champs)
@@ -536,6 +629,9 @@ def main(argv=None) -> int:
               f"{m['sauvegardes']};{m['ouvertures_indeterminees']};{m['radiations_sans_procedure']};"
               f"{m['procedure_en_cours']}", file=sys.stderr)
     print(f"natures des jugements : {rapport['natures_jugements']}", file=sys.stderr)
+    for o, m in rapport["origines"].items():
+        print(f"{o} : " + json.dumps({k: v for k, v in m.items() if k.startswith(("exclus_", "en_", "concurrent_"))},
+                                     ensure_ascii=False), file=sys.stderr)
     for e in rapport["exemples_ouvertures_indeterminees"]:
         print(f"  ouverture indéterminée : {e}", file=sys.stderr)
     print(f"\nRapport : {chemin}\nSHA-256 : {h}", file=sys.stderr)

@@ -41,6 +41,8 @@ def jeu(dossier):
         ("100000009", "2018-12-31", "C", "Public", 0.1, 1e6, 1e4),   # clôture après parution
         ("100000010", "2017-12-31", "C", "Public", 0.1, 1e6, 1e4),
         ("100000011", "2017-12-31", "C", "Public", 0.1, 1e6, 1e4),   # ouverture datée avant t0, parue après
+        ("100000012", "2017-12-31", "C", "Public", 0.1, 1e6, 1e4),   # en plan de sauvegarde, puis résolution
+        ("100000013", "2017-12-31", "C", "Public", 0.1, 1e6, 1e4),   # en observation de sauvegarde
     ]
     cols = {c: [] for c in co.COLONNES_RATIOS}
     for s, c, t, conf, me, ca, rn in lignes:
@@ -65,19 +67,22 @@ def jeu(dossier):
     ecrire("sf-totaux.parquet", {
         "siren": ["100000001", "100000002"], "date_cloture_exercice": [D(2017, 12, 31)] * 2,
         "type_bilan": ["C", "S"], "confidentiality": ["Public", "Partiellement confidentiel"],
-        "EE": [1.5e6, None], "180": [None, 5e5], "CO-1A": [1.5e6, None], "110-112": [None, 5e5]})
-    sirens = [f"1000000{i:02d}" for i in range(1, 12)]
+        "EE": [1.5e6, None], "180": [None, 5e5], "CO-1A": [1.5e6, None], "110-112": [None, 5e5],
+        "CJ-CK": [9e5, None], "EC": [6e5, None], "DU": [2e5, None], "DD": [1e5, None], "DH": [5e4, None],
+        "GG": [7.5e4, None], "DL": [9e5, None],
+        "096": [None, 3e5], "176": [None, 2e5], "156": [None, 5e4], "142": [None, 3e5]})
+    sirens = [f"1000000{i:02d}" for i in range(1, 14)]
     ecrire("sirene-historique.parquet", {
-        "siren": sirens, "dateDebut": ["2000-01-01"] * 11, "dateFin": [None] * 11,
+        "siren": sirens, "dateDebut": ["2000-01-01"] * 13, "dateFin": [None] * 13,
         "categorieJuridiqueUniteLegale": ["6540" if s == "100000003" else "5710" for s in sirens],
-        "activitePrincipaleUniteLegale": ["41.20A"] * 11,
-        "nomenclatureActivitePrincipaleUniteLegale": ["NAFRev2"] * 11})
-    ecrire("sirene-creation.parquet", {"siren": sirens, "dateCreationUniteLegale": ["2005-01-01"] * 11})
+        "activitePrincipaleUniteLegale": ["41.20A"] * 13,
+        "nomenclatureActivitePrincipaleUniteLegale": ["NAFRev2"] * 13})
+    ecrire("sirene-creation.parquet", {"siren": sirens, "dateCreationUniteLegale": ["2005-01-01"] * 13})
     ecrire("bodacc-collective.parquet", {
         "dateparution": ["2019-05-15", "2017-01-20", "2016-03-01", "2017-05-01", "2019-02-01", "2019-03-01",
-                         "2018-10-05"],
+                         "2018-10-05", "2016-06-01", "2017-06-01", "2019-06-01", "2018-03-01"],
         "registre": ["100000001", "100000005", "100000006", "100000006", "100000010", "100000002",
-                     "100000011"],
+                     "100000011", "100000012", "100000012", "100000012", "100000013"],
         "jugement": [
             jugement("Jugement d'ouverture", "Jugement d'ouverture de liquidation judiciaire", "2019-05-01"),
             jugement("Jugement d'ouverture", "Jugement d'ouverture d'une procédure de redressement judiciaire",
@@ -88,7 +93,15 @@ def jeu(dossier):
             jugement("Jugement d'ouverture", "Jugement d'ouverture d'une procédure de sauvegarde", "2019-01-20"),
             jugement("Jugement d'ouverture", "Jugement d'ouverture de liquidation judiciaire", "2019-02-20",
                      typ="annule"),
-            jugement("Jugement d'ouverture", "Jugement d'ouverture de liquidation judiciaire", "2018-09-20")]})
+            jugement("Jugement d'ouverture", "Jugement d'ouverture de liquidation judiciaire", "2018-09-20"),
+            jugement("Jugement d'ouverture", "Jugement d'ouverture d'une procédure de sauvegarde", "2016-05-20"),
+            jugement("Extrait de jugement", "Jugement arrêtant le plan de sauvegarde", "2017-05-20"),
+            jugement("Jugement prononçant", "Jugement prononçant la résolution du plan de sauvegarde et la "
+                                             "liquidation judiciaire", "2019-05-20"),
+            jugement("Jugement d'ouverture", "Jugement d'ouverture d'une procédure de sauvegarde", "2018-02-20")]})
+    ecrire("bodacc-modification-evenements.parquet", {
+        "dateparution": ["2019-01-10", "2017-01-10"], "registre": ["100000007", "100000006"],
+        "evenement": ["dissolution", "fusion"]})
     ecrire("bodacc-radiation.parquet", {"dateparution": ["2017-03-01"], "registre": ["100000004"]})
     mois = [f"{a}-{m:02d}" for a in range(2010, 2019) for m in range(1, 13)]
     ecrire("bdf-diren.parquet", {
@@ -118,9 +131,10 @@ class TestConstruire(unittest.TestCase):
         self.assertEqual(m["radiee"], 1)
         self.assertEqual(m["procedure_en_cours"], 1)
         self.assertEqual(m["ouverture_anterieure_publiee_apres_t0"], 1)
-        self.assertEqual(m["eligibles"], 5)
+        self.assertEqual(m["eligibles"], 7)
         self.assertTrue(m["retenue"])
-        self.assertEqual(set(self.cas), {"100000001", "100000002", "100000006", "100000007", "100000010"})
+        self.assertEqual(set(self.cas), {"100000001", "100000002", "100000006", "100000007", "100000010",
+                                         "100000012", "100000013"})
         b = self.rapport["bilans_exclus"]
         self.assertEqual((b["consolides"], b["doublon_type"], b["cloture_apres_parution"]), (1, 1, 1))
 
@@ -130,7 +144,7 @@ class TestConstruire(unittest.TestCase):
         self.assertEqual(self.cas["100000010"]["issue"], 0)
         self.assertEqual(self.cas["100000010"]["sauvegarde"], 1)
         self.assertEqual(self.cas["100000002"]["issue"], 0)  # jugement annulé ignoré
-        self.assertEqual(self.rapport["origines"]["2018"]["defaillances"], 1)
+        self.assertEqual(self.rapport["origines"]["2018"]["defaillances"], 2)  # A et la résolution de plan
 
     def test_bilan_connu_et_variables(self):
         a = self.cas["100000001"]
@@ -142,6 +156,28 @@ class TestConstruire(unittest.TestCase):
         self.assertEqual(self.cas["100000007"]["cloture"], D(2016, 12, 31))
         self.assertAlmostEqual(self.cas["100000007"]["marge_ebe"], 0.3)
         self.assertEqual(self.cas["100000006"]["capitaux_propres_negatifs"], 1)
+
+    def test_plans_et_sauvegardes_inclus(self):
+        p = self.cas["100000012"]
+        self.assertEqual((p["en_plan"], p["en_observation_sauvegarde"]), (1, 0))
+        self.assertEqual((p["issue"], p["date_issue"]), (1, D(2019, 5, 20)))  # résolution du plan
+        o = self.cas["100000013"]
+        self.assertEqual((o["en_plan"], o["en_observation_sauvegarde"], o["issue"]), (0, 1, 0))
+        self.assertEqual(self.rapport["origines"]["2018"]["exclus_etat_RJ"], 1)
+
+    def test_evenements_concurrents(self):
+        self.assertEqual(self.cas["100000007"]["evenement_concurrent"], "dissolution")
+        self.assertIsNone(self.cas["100000006"]["evenement_concurrent"])  # fusion avant t0
+
+    def test_altman(self):
+        a = self.cas["100000001"]
+        self.assertAlmostEqual(a["altman_x1"], (9e5 - (6e5 - 2e5)) / 1.5e6)
+        self.assertAlmostEqual(a["altman_x2"], 1.5e5 / 1.5e6)
+        self.assertAlmostEqual(a["altman_x3"], 7.5e4 / 1.5e6)
+        self.assertAlmostEqual(a["altman_x4"], 9e5 / 6e5)
+        b = self.cas["100000002"]
+        self.assertAlmostEqual(b["altman_x1"], (3e5 - (2e5 - 5e4)) / 5e5)
+        self.assertIsNone(b["altman_x3"])  # compte de résultat masqué : 270 absent
 
     def test_compte_de_resultat_masque(self):
         b = self.cas["100000002"]
@@ -163,7 +199,7 @@ class TestConstruire(unittest.TestCase):
             co.construire(self.dossier, None, origines=(2021,))
         self.assertEqual(len(self.h), 64)
         r = json.load(open(self.chemin))
-        self.assertEqual(r["sortie"]["lignes"], 5)
+        self.assertEqual(r["sortie"]["lignes"], 7)
         self.assertIn("ratios-2017.parquet", r["entrees"])
 
     def test_natures_v101(self):

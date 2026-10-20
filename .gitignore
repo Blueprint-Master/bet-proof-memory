@@ -9,3 +9,4 @@ p0-remplissage-*.json
 p0-sources-*.json
 p0-structure-*.json
 *.log
+evaluation-*.json

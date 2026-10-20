@@ -25,6 +25,7 @@ Ce dépôt tient deux rôles :
 | `p0/p0_structure.py` | P0 (v1.4) : noms des clés de la liasse par type de bilan, nombre de bilans par année de clôture |
 | `ingestion/extraire.py` | Phase 5, étape 1 : instantanés figés des sources (ratios, BODACC sous garde du scellé, Sirene, totaux de bilan), avec manifeste et empreintes |
 | `ingestion/construire.py` | Phase 5, étape 2 : cas de l'espace de développement (origines 2008 à 2020), variables de l'annexe A, issues, couverture par origine |
+| `evaluation/references.py` | Phase 5, étape 3 : R0, R1 (Z'' d'Altman), R2 (hasard à temps discret) sur les trois plis du développement ; Brier, log-loss, AUC, calibration, gain bootstrap |
 | `tests/` | Tests, sans accès réseau extérieur |
 
 ## Exécuter P0

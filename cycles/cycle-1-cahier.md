@@ -1,6 +1,6 @@
 # Cycle 1 : cahier des charges des mécanismes candidats (protocole Q1 v1.7.1, P7)
 
-Destinataires : les IA génératrices (ChatGPT, Gemini, Mistral) et l'IA vérificatrice (Claude). Version figée et horodatée au registre avant tout envoi.
+Destinataires : les IA génératrices (ChatGPT, Gemini, Mistral) et l'IA vérificatrice (Claude). Figé le 20/10/2026, validé par Rémi ; empreinte au registre avant tout envoi.
 
 ## 1. La question
 

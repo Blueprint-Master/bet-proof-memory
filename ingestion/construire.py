@@ -201,8 +201,35 @@ def periode_a(periodes: list, t0: dt.date):
     return None
 
 
+# Natures de jugement (v1.0.1, d'après la répartition observée le 20/10/2026 sur l'espace
+# de développement). OUVRANTS : la procédure est en cours après ce jugement (P1).
+# ISSUES : le jugement est une défaillance au sens de P3 (entrée en redressement ou en
+# liquidation judiciaire d'une société qui n'y était pas).
+OUVRANTS = {"OUV-LJ", "OUV-RJ", "OUV-SAUV", "OUV-INDET", "CONV-SAUV-LJ", "CONV-SAUV-RJ",
+            "RESOL-LJ", "REOUV"}
+ISSUES = {"OUV-LJ", "OUV-RJ", "CONV-SAUV-LJ", "CONV-SAUV-RJ", "RESOL-LJ"}
+
+
+def reparer(texte: str) -> str:
+    """Répare le texte UTF-8 lu comme Latin-1 (« clÃ´ture »), constaté dans le BODACC."""
+    if "Ã" in texte:
+        try:
+            return texte.encode("latin-1").decode("utf-8")
+        except (UnicodeEncodeError, UnicodeDecodeError):
+            return texte
+    return texte
+
+
 def classer_jugement(jugement) -> tuple:
-    """(nature, date) d'une annonce de procédure : OUV-LJ, OUV-RJ, OUV-SAUV, CLOT, AUTRE, ANNULE."""
+    """(nature, date) d'une annonce de procédure.
+
+    OUV-LJ, OUV-RJ, OUV-SAUV : jugements d'ouverture ; OUV-INDET : ouverture dont la
+    procédure n'est nommée ni dans la nature ni dans le complément ; CONV-SAUV-LJ et
+    CONV-SAUV-RJ : conversion d'une sauvegarde ; RESOL-LJ : résolution d'un plan et
+    liquidation ; REOUV : reprise d'une liquidation clôturée ; CLOT : clôture ou fin de
+    la procédure ; ANNULE ; AUTRE (conversions de redressement en liquidation, plans,
+    états des créances, sanctions personnelles...).
+    """
     j = jugement
     if isinstance(j, str):
         try:
@@ -212,22 +239,34 @@ def classer_jugement(jugement) -> tuple:
     j = j or {}
     if str(j.get("type", "")).lower() == "annule":
         return "ANNULE", None
-    texte = f"{j.get('famille', '')} {j.get('nature', '')}".lower()
+    nature = reparer(f"{j.get('famille', '')} {j.get('nature', '')}").lower()
+    complement = reparer(str(j.get("complementJugement") or "")).lower()
     date = _date(j.get("date"))
-    if "clôture" in texte or "cloture" in texte:
+    if "clôture" in nature or "cloture" in nature or "mettant fin à la procédure" in nature:
         return "CLOT", date
-    if "ouverture" in texte:
-        if "sauvegarde" in texte:
-            return "OUV-SAUV", date
-        if "liquidation" in texte:
-            return "OUV-LJ", date
-        if "redressement" in texte:
-            return "OUV-RJ", date
+    if "reprise de la procédure de liquidation" in nature:
+        return "REOUV", date
+    if "résolution du plan" in nature and "liquidation" in nature:
+        return "RESOL-LJ", date
+    if "conversion" in nature and "sauvegarde" in nature:
+        if "liquidation" in nature:
+            return "CONV-SAUV-LJ", date
+        if "redressement" in nature:
+            return "CONV-SAUV-RJ", date
+    if "ouverture" in nature:
+        for texte in (nature, complement):
+            if "sauvegarde" in texte:
+                return "OUV-SAUV", date
+            if "liquidation" in texte:
+                return "OUV-LJ", date
+            if "redressement" in texte:
+                return "OUV-RJ", date
+        return "OUV-INDET", date
     return "AUTRE", date
 
 
 def procedures(dossier: str) -> tuple[dict, dict, list]:
-    evenements, chemins, natures = {}, [], {}
+    evenements, chemins, natures, exemples = {}, [], {}, []
     for motif in ("bodacc-collective.parquet", "bodacc-pcl.parquet"):
         try:
             t, c = _lire(dossier, motif, ["dateparution", "registre", "jugement"])
@@ -243,6 +282,12 @@ def procedures(dossier: str) -> tuple[dict, dict, list]:
                 raise RuntimeError("annonce postérieure à la garde du scellé dans les instantanés")
             n, d = classer_jugement(j)
             natures[n] = natures.get(n, 0) + 1
+            if n == "OUV-INDET" and len(exemples) < 15:
+                try:
+                    jj = json.loads(j) if isinstance(j, str) else (j or {})
+                except ValueError:
+                    jj = {}
+                exemples.append(reparer(str(jj.get("complementJugement") or ""))[:200])
             if n not in ("ANNULE", "AUTRE"):
                 evenements.setdefault(s, []).append((p, d or p, n))
     if not chemins:
@@ -257,7 +302,7 @@ def procedures(dossier: str) -> tuple[dict, dict, list]:
             if p >= GARDE_SCELLE:
                 raise RuntimeError("radiation postérieure à la garde du scellé dans les instantanés")
             radiations[s] = min(p, radiations.get(s, p))
-    return evenements, {"radiations": radiations, "natures": natures}, chemins + c
+    return evenements, {"radiations": radiations, "natures": natures, "exemples_ouv_indet": exemples}, chemins + c
 
 
 def bdf(dossier: str) -> tuple[dict, list]:
@@ -335,7 +380,7 @@ def construire(dossier: str, sortie, origines=ORIGINES_DEV, seuil=SEUIL_COUVERTU
         m = {"bilan_connu": 0, "forme_hors_p1": 0, "sans_periode_sirene": 0, "non_cree": 0,
              "radiee": 0, "procedure_en_cours": 0, "ouverture_anterieure_publiee_apres_t0": 0,
              "eligibles": 0, "defaillances": 0,
-             "sauvegardes": 0, "radiations_sans_procedure": 0}
+             "sauvegardes": 0, "ouvertures_indeterminees": 0, "radiations_sans_procedure": 0}
         cas = []
         for s, liste in bilans.items():
             connus = [x for x in liste if x[1] < t0]
@@ -362,27 +407,30 @@ def construire(dossier: str, sortie, origines=ORIGINES_DEV, seuil=SEUIL_COUVERTU
             for pe, _dj, n in evts.get(s, []):
                 if pe >= t0:
                     break
-                ouverte = True if n.startswith("OUV") else False if n == "CLOT" else ouverte
+                ouverte = True if n in OUVRANTS else False if n == "CLOT" else ouverte
             if ouverte:
                 m["procedure_en_cours"] += 1
                 continue
             # P1 vise un jugement d'ouverture ANTÉRIEUR à t0. Un jugement daté avant t0 mais
             # paru après t0 rend le cas inéligible en réalité, sans qu'on puisse le savoir à t0 :
             # le cas est écarté et compté, plutôt qu'étiqueté « sans défaillance ».
-            if any(n.startswith("OUV") and dj <= t0 <= pe for pe, dj, n in evts.get(s, [])):
+            if any(n in OUVRANTS and dj <= t0 <= pe for pe, dj, n in evts.get(s, [])):
                 m["ouverture_anterieure_publiee_apres_t0"] += 1
                 continue
             m["eligibles"] += 1
-            issue, date_issue, sauv = 0, None, 0
+            issue, date_issue, sauv, indet = 0, None, 0, 0
             for _pe, dj, n in evts.get(s, []):
                 if t0 < dj <= fin:
-                    if n in ("OUV-LJ", "OUV-RJ") and not issue:
+                    if n in ISSUES and not issue:
                         issue, date_issue = 1, dj
                     elif n == "OUV-SAUV":
                         sauv = 1
+                    elif n == "OUV-INDET":
+                        indet = 1
             rad = int(not issue and s in radiations and t0 <= radiations[s] <= fin)
             m["defaillances"] += issue
             m["sauvegardes"] += sauv
+            m["ouvertures_indeterminees"] += int(indet and not issue)
             m["radiations_sans_procedure"] += rad
             cas.append((s, c, p, b, total, cj, naf, nom, cr, issue, date_issue, sauv, rad))
         m["couverture"] = m["eligibles"]
@@ -422,6 +470,7 @@ def construire(dossier: str, sortie, origines=ORIGINES_DEV, seuil=SEUIL_COUVERTU
         sortie.ecrire(lignes)
         total_lignes += len(lignes)
     return total_lignes, {"origines": rapport, "bilans_exclus": motifs_bilans, "natures_jugements": info["natures"],
+                    "exemples_ouvertures_indeterminees": info["exemples_ouv_indet"],
                     "seuil_couverture": seuil, "horizon_jours": HORIZON_JOURS,
                     "entrees": sorted(set(e1 + e2 + e3 + e4))}
 
@@ -480,11 +529,15 @@ def main(argv=None) -> int:
     lignes, rapport = construire(a.dossier, sortie)
     sortie.fermer()
     chemin, h = ecrire_rapport(a.dossier, sortie, lignes, rapport)
-    print("origine;bilan_connu;eligibles;retenue;defaillances;sauvegardes;radiations_sans_procedure", file=sys.stderr)
+    print("origine;bilan_connu;eligibles;retenue;defaillances;sauvegardes;ouvertures_indeterminees;"
+          "radiations_sans_procedure;procedure_en_cours", file=sys.stderr)
     for o, m in rapport["origines"].items():
         print(f"{o};{m['bilan_connu']};{m['eligibles']};{m['retenue']};{m['defaillances']};"
-              f"{m['sauvegardes']};{m['radiations_sans_procedure']}", file=sys.stderr)
+              f"{m['sauvegardes']};{m['ouvertures_indeterminees']};{m['radiations_sans_procedure']};"
+              f"{m['procedure_en_cours']}", file=sys.stderr)
     print(f"natures des jugements : {rapport['natures_jugements']}", file=sys.stderr)
+    for e in rapport["exemples_ouvertures_indeterminees"]:
+        print(f"  ouverture indéterminée : {e}", file=sys.stderr)
     print(f"\nRapport : {chemin}\nSHA-256 : {h}", file=sys.stderr)
     return 0
 

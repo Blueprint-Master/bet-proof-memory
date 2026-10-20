@@ -166,6 +166,29 @@ class TestConstruire(unittest.TestCase):
         self.assertEqual(r["sortie"]["lignes"], 5)
         self.assertIn("ratios-2017.parquet", r["entrees"])
 
+    def test_natures_v101(self):
+        cj = lambda f, n, c=None: co.classer_jugement(json.dumps(  # noqa: E731
+            {"famille": f, "nature": n, "date": "2020-01-01", "complementJugement": c}))[0]
+        self.assertEqual(cj("Jugement de clÃ´ture", "Jugement de clÃ´ture pour insuffisance d'actif"), "CLOT")
+        self.assertEqual(cj("Extrait de jugement", "Jugement mettant fin à la procédure de redressement judiciaire"),
+                         "CLOT")
+        self.assertEqual(cj("Jugement prononçant",
+                            "Jugement de conversion en liquidation judiciaire de la procédure de sauvegarde"),
+                         "CONV-SAUV-LJ")
+        self.assertEqual(cj("Jugement prononçant", "Jugement de conversion en liquidation judiciaire"), "AUTRE")
+        self.assertEqual(cj("Extrait de jugement", "Jugement prononçant la résolution du plan de redressement "
+                                                   "et la liquidation judiciaire"), "RESOL-LJ")
+        self.assertEqual(cj("Extrait de jugement", "Jugement de reprise de la procédure de liquidation judiciaire"),
+                         "REOUV")
+        self.assertEqual(cj("Jugement d'ouverture", "Autre jugement d'ouverture",
+                            "Jugement prononçant l'ouverture d'une procédure de liquidation judiciaire simplifiée"),
+                         "OUV-LJ")
+        self.assertEqual(cj("Jugement d'ouverture", "Autre jugement d'ouverture", "texte sans procédure"),
+                         "OUV-INDET")
+        self.assertEqual(cj("Avis de dÃ©pÃ´t", "DÃ©pÃ´t de l'Ã©tat des crÃ©ances"), "AUTRE")
+        self.assertIn("OUV-INDET", co.OUVRANTS)
+        self.assertNotIn("OUV-INDET", co.ISSUES)
+
     def test_classer_jugement(self):
         self.assertEqual(co.classer_jugement(jugement("Jugement de clôture", "clôture pour insuffisance d'actif",
                                                       "2020-01-01"))[0], "CLOT")

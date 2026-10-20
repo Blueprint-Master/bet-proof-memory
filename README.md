@@ -24,6 +24,7 @@ Ce dépôt tient deux rôles :
 | `p0/p0_sources.py` | P0 (v1.3) : couverture de Sirene et des bilans détaillés de Signaux Faibles |
 | `p0/p0_structure.py` | P0 (v1.4) : noms des clés de la liasse par type de bilan, nombre de bilans par année de clôture |
 | `ingestion/extraire.py` | Phase 5, étape 1 : instantanés figés des sources (ratios, BODACC sous garde du scellé, Sirene, totaux de bilan), avec manifeste et empreintes |
+| `ingestion/construire.py` | Phase 5, étape 2 : cas de l'espace de développement (origines 2008 à 2020), variables de l'annexe A, issues, couverture par origine |
 | `tests/` | Tests, sans accès réseau extérieur |
 
 ## Exécuter P0

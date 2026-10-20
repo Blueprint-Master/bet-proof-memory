@@ -17,11 +17,14 @@ Les parquets sont lus colonne par colonne, par requêtes HTTP Range.
 """
 
 import argparse
+import http.client
 import datetime as dt
 import hashlib
 import json
 import os
 import sys
+import time
+import urllib.error
 import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -33,6 +36,41 @@ SIRENE_UL = _SIRENE + "20261001-073325/stock-stockunitelegale-parquet.parquet"
 SIRENE_UL_HISTO = _SIRENE + "20261001-073513/stock-stockunitelegalehistorique-parquet.parquet"
 
 ANNEES_DEFAUT = "2019,2022"
+ESSAIS = 5
+ATTENTE_S = 10
+
+
+def journal(message: str) -> None:
+    """Progression sur la sortie d'erreur, horodatée (v1.0.1)."""
+    print(f"[{dt.datetime.now().strftime('%H:%M:%S')}] {message}", file=sys.stderr, flush=True)
+
+
+def avec_reprise(fonction, *args, essais=ESSAIS, attente_s=ATTENTE_S, **kwargs):
+    """Rejoue une lecture idempotente après une coupure réseau (v1.0.1).
+
+    Constaté le 20/10/2026 : « Connection reset by peer » en cours d'exécution.
+    Les lectures sont idempotentes (Range sur un fichier figé, export CSV
+    rejoué en entier), donc rejouer ne change pas le résultat.
+    """
+    for i in range(1, essais + 1):
+        try:
+            return fonction(*args, **kwargs)
+        except (urllib.error.URLError, http.client.HTTPException, EOFError, OSError) as e:
+            if i == essais:
+                raise
+            journal(f"coupure réseau ({e}), essai {i + 1}/{essais} dans {attente_s * i} s")
+            time.sleep(attente_s * i)
+
+
+class FichierAvecReprise(FichierHttpRange):
+    """Chaque requête Range est rejouée en cas de coupure (v1.0.1)."""
+
+    def read(self, n: int = -1) -> bytes:
+        pos = self.pos
+        def lire():
+            self.pos = pos
+            return FichierHttpRange.read(self, n)
+        return avec_reprise(lire)
 DEBUT_CHANGEMENTS = "2014-01-01"
 # Formes de P1 (SARL, SA, SAS, SNC), catégories juridiques Insee de niveau III.
 # Liste à figer en v1.3 ; ce rapport en mesure la couverture.
@@ -81,7 +119,7 @@ def _filtrer(batch, cible):
 def lire_sirene_ul(url: str, cible: set[int]) -> tuple[dict, dict]:
     import pyarrow.parquet as pq
 
-    f = FichierHttpRange(url)
+    f = avec_reprise(FichierAvecReprise, url)
     pf = pq.ParquetFile(f)
     cols = _colonnes(pf, ["siren", "categorieJuridiqueUniteLegale",
                           "activitePrincipaleUniteLegale", "dateCreationUniteLegale"])
@@ -97,7 +135,7 @@ def lire_sirene_ul(url: str, cible: set[int]) -> tuple[dict, dict]:
 def lire_sirene_histo(url: str, cible: set[int]) -> tuple[dict, dict]:
     import pyarrow.parquet as pq
 
-    f = FichierHttpRange(url)
+    f = avec_reprise(FichierAvecReprise, url)
     pf = pq.ParquetFile(f)
     cols = _colonnes(pf, ["siren", "dateDebut", "changementActivitePrincipaleUniteLegale",
                           "changementCategorieJuridiqueUniteLegale"])
@@ -119,7 +157,7 @@ def lire_sf(url: str, cles: dict) -> tuple[set, dict]:
 
     from p0_jointure import cle
 
-    f = FichierHttpRange(url)
+    f = avec_reprise(FichierAvecReprise, url)
     pf = pq.ParquetFile(f)
     cols = _colonnes(pf, ["siren", "date_cloture_exercice"])
     annees = set(cles)
@@ -152,11 +190,16 @@ def _part(k, n):
 
 def executer(annees: list[int], ouvrir=urllib.request.urlopen, url_ul=SIRENE_UL,
              url_histo=SIRENE_UL_HISTO, url_sf=SOURCE_SF_PARQUET) -> dict:
-    cles, _ = charger_bilans(annees, ouvrir)
+    journal("export des clés de bilans (ratios)")
+    cles, _ = avec_reprise(charger_bilans, annees, ouvrir)
     cible = {k // 100_000_000 for a in cles for k in cles[a]}
+    journal(f"{len(cible)} SIREN ; lecture de Sirene, unités légales")
     ul, meta_ul = lire_sirene_ul(url_ul, cible)
+    journal("lecture de l'historique Sirene")
     histo, meta_histo = lire_sirene_histo(url_histo, cible)
+    journal("lecture des bilans détaillés de Signaux Faibles")
     sf, meta_sf = lire_sf(url_sf, cles)
+    journal("calcul des parts")
     par_annee = {}
     for a in annees:
         groupes = {}

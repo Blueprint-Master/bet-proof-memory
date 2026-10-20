@@ -80,6 +80,20 @@ class TestSources(unittest.TestCase):
         self.assertEqual(conf["signaux_faibles_trouves"], 1.0)  # la clôture 2018 ne compte pas
         self.assertIn("liasse", r["sources"]["signaux_faibles"]["types"])
 
+    def test_reprise_apres_coupure(self):
+        appels = []
+
+        def fragile():
+            appels.append(1)
+            if len(appels) < 3:
+                raise ConnectionResetError(104, "Connection reset by peer")
+            return "ok"
+
+        self.assertEqual(ps.avec_reprise(fragile, attente_s=0), "ok")
+        self.assertEqual(len(appels), 3)
+        with self.assertRaises(ConnectionResetError):
+            ps.avec_reprise(lambda: (_ for _ in ()).throw(ConnectionResetError()), essais=2, attente_s=0)
+
     def test_forme_p1(self):
         self.assertTrue(ps.forme_p1("5710"))
         self.assertTrue(ps.forme_p1(5499))

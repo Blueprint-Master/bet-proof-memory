@@ -30,6 +30,9 @@ Ce dépôt tient deux rôles :
 | `evaluation/lgd.py` | P6 ter (v1.7) : perte en cas de défaut par modèle multi-états (Aalen-Johansen), seuils de décision de P6 |
 | `evaluation/critere.py` | P5 bis et P6 (v1.7) : témoin recalibré, assemblage en décalage, coût réalisé, bootstrap par grappes NAF, décomposition |
 | `evaluation/references_v17.py` | Réévaluation des références sous le critère de la v1.7, sur les trois plis |
+| `mecanismes/cycle1.py` | Cycle 1 : calcul des 35 mécanismes candidats retenus |
+| `evaluation/cycle.py` | P7 : évaluation des candidats d'un cycle sur les trois plis, admission, assemblage des admis |
+| `cycles/` | Cahiers, propositions brutes, vérifications et listes figées des cycles |
 | `tests/` | Tests, sans accès réseau extérieur |
 
 ## Exécuter P0

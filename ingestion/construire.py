@@ -439,6 +439,38 @@ def _log(x):
     return math.log(max(x, 1.0)) if x is not None else None
 
 
+INSTANTANES_REQUIS = ("ratios-*.parquet", "bodacc-dpc.parquet", "bodacc-collective.parquet",
+                      "bodacc-radiation.parquet", "bodacc-modification-evenements.parquet",
+                      "sirene-historique.parquet", "sirene-creation.parquet", "sf-totaux.parquet",
+                      "bdf-diren.parquet")
+
+
+def verifier_instantanes(dossier: str) -> dict:
+    """Refuse de construire si un instantané manque ou ne correspond pas à son dernier manifeste.
+
+    Une empreinte différente signale une extraction en cours (fichier en réécriture) ou un
+    fichier modifié hors outil (v1.0.3, après un lancement prématuré le 20/10/2026)."""
+    attendus = {}
+    for m in sorted(glob.glob(os.path.join(dossier, "manifeste-*.json"))):  # le plus récent l'emporte
+        with open(m, encoding="utf-8") as f:
+            for e in json.load(f).get("fichiers", []):
+                attendus[e["fichier"]] = (e["sha256"], os.path.basename(m))
+    controle = {}
+    for motif in INSTANTANES_REQUIS:
+        chemins = sorted(glob.glob(os.path.join(dossier, motif)))
+        if not chemins:
+            raise RuntimeError(f"instantané manquant : {motif} (extraction non faite ou en cours)")
+        for c in chemins:
+            nom = os.path.basename(c)
+            if nom not in attendus:
+                raise RuntimeError(f"{nom} sans manifeste : extraction en cours ou interrompue")
+            if sha256_fichier(c) != attendus[nom][0]:
+                raise RuntimeError(f"{nom} ne correspond pas à {attendus[nom][1]} : extraction en cours ou "
+                                   f"fichier modifié")
+            controle[nom] = attendus[nom][1]
+    return controle
+
+
 def construire(dossier: str, sortie, origines=ORIGINES_DEV, seuil=SEUIL_COUVERTURE, aujourdhui=None):
     aujourdhui = aujourdhui or dt.date.today()
     if any(dt.date(a, 9, 30) + dt.timedelta(days=HORIZON_JOURS) >= GARDE_SCELLE for a in origines):
@@ -618,8 +650,11 @@ def main(argv=None) -> int:
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     p.add_argument("--dossier", default=DOSSIER_DEFAUT)
     a = p.parse_args(argv)
+    journal("vérification des instantanés")
+    manifestes = verifier_instantanes(a.dossier)
     sortie = Sortie(os.path.join(a.dossier, "cas-dev.parquet"))
     lignes, rapport = construire(a.dossier, sortie)
+    rapport["manifestes"] = manifestes
     sortie.fermer()
     chemin, h = ecrire_rapport(a.dossier, sortie, lignes, rapport)
     print("origine;bilan_connu;eligibles;retenue;defaillances;sauvegardes;ouvertures_indeterminees;"

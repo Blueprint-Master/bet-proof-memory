@@ -225,6 +225,29 @@ class TestConstruire(unittest.TestCase):
         self.assertIn("OUV-INDET", co.OUVRANTS)
         self.assertNotIn("OUV-INDET", co.ISSUES)
 
+    def test_verification_des_instantanes(self):
+        import shutil
+
+        d = tempfile.mkdtemp()
+        for f in os.listdir(self.dossier):
+            if f.endswith(".parquet") and f != "cas-dev.parquet":
+                shutil.copy(os.path.join(self.dossier, f), d)
+        with self.assertRaisesRegex(RuntimeError, "sans manifeste"):
+            co.verifier_instantanes(d)
+        fichiers = [{"fichier": f, "sha256": co.sha256_fichier(os.path.join(d, f))}
+                    for f in os.listdir(d) if f.endswith(".parquet")]
+        with open(os.path.join(d, "manifeste-test-20261020-000000.json"), "w") as f:
+            json.dump({"fichiers": fichiers}, f)
+        self.assertIn("sf-totaux.parquet", co.verifier_instantanes(d))
+        with open(os.path.join(d, "sf-totaux.parquet"), "ab") as f:
+            f.write(b"x")  # réécriture en cours
+        with self.assertRaisesRegex(RuntimeError, "ne correspond pas"):
+            co.verifier_instantanes(d)
+        shutil.copy(os.path.join(self.dossier, "sf-totaux.parquet"), d)
+        os.remove(os.path.join(d, "bdf-diren.parquet"))
+        with self.assertRaisesRegex(RuntimeError, "manquant"):
+            co.verifier_instantanes(d)
+
     def test_classer_jugement(self):
         self.assertEqual(co.classer_jugement(jugement("Jugement de clôture", "clôture pour insuffisance d'actif",
                                                       "2020-01-01"))[0], "CLOT")

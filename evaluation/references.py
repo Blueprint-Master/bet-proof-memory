@@ -1,4 +1,4 @@
-"""Phase 5, étape 3 : évaluation des références R0, R1, R2 sur l'espace de développement (protocole Q1 v1.6).
+"""Phase 5, étape 3 : évaluation des références R0, R1, R2 sur l'espace de développement (protocole Q1 v1.6, R2 v1.7).
 
 Plis temporels (P7), qui respectent la règle de séparation de P4 (la fenêtre d'issue
 des origines d'apprentissage se clôt au plus tard à l'origine testée) :
@@ -17,9 +17,15 @@ Références (P5) :
       logistique L2 sur les variables de l'annexe A ; variables continues bornées aux 1er et
       99e centiles, médiane et indicateur pour les valeurs manquantes, centrées réduites ;
       NAF niveau 2 en indicatrices ; pénalité choisie par validation croisée en 5 parts
-      groupées par SIREN dans la grille {1e-4, ..., 100}. La pénalité lambda s'applique à
-      la log-vraisemblance MOYENNE : objectif = moyenne des pertes + lambda/2 ||w||^2,
-      soit C = 1 / (lambda x nombre de lignes) dans scikit-learn.
+      groupées par SIREN dans la grille {0, 1e-4, ..., 100} (v1.7 : 0 ajouté). La pénalité
+      lambda s'applique à la log-vraisemblance MOYENNE : objectif = moyenne des pertes +
+      lambda/2 ||w||^2, soit C = 1 / (lambda x nombre de lignes) dans scikit-learn (C infini
+      pour lambda = 0). Contrôle de séparation (v1.7) : lambda = 0 est retiré si, dans l'une
+      des 5 parts, l'optimiseur atteint sa limite d'itérations ou un coefficient dépasse 50
+      en valeur absolue, ou si une probabilité ajustée est numériquement 0 ou 1 (v1.7.1) ;
+      il ne peut donc être retenu que s'il est valide dans toutes les
+      parts. Si l'ajustement final avec lambda = 0 viole la même règle, la valeur suivante
+      de la grille (meilleur score) est retenue. Chaque retrait est rapporté.
 
 Mesures (P6) : Brier (primaire), log-loss, AUC, calibration (ordonnée et pente), part des
 défaillances dans le décile le plus risqué, courbe de fiabilité en 10 classes ; gain
@@ -52,7 +58,9 @@ PLIS = (
     {"nom": "548j-2018-vers-2020", "apprentissage": (2018,), "test": 2020, "horizon": 548},
 )
 INTERVALLES = ((0, 183), (183, 365), (365, 548))
-GRILLE_LAMBDA = (1e-4, 1e-3, 1e-2, 1e-1, 1.0, 10.0, 100.0)
+GRILLE_LAMBDA = (0.0, 1e-4, 1e-3, 1e-2, 1e-1, 1.0, 10.0, 100.0)
+MAX_ITER = 2000
+SEUIL_COEF = 50.0
 GRILLE_M = (1, 3, 10, 30, 100, 300, 1000, 3000)
 ALTMAN = (6.56, 3.26, 6.72, 1.05)
 TIRAGES = 1000
@@ -255,8 +263,30 @@ class R2:
     def __init__(self, horizon: int):
         self.horizon = horizon
 
-    def ajuster(self, d: dict, y_horizon: np.ndarray):
+    @staticmethod
+    def _logit(lam: float, n: int):
         from sklearn.linear_model import LogisticRegression
+
+        return LogisticRegression(C=np.inf if lam == 0 else 1.0 / (lam * n), max_iter=MAX_ITER, fit_intercept=False)
+
+    @staticmethod
+    def _valide(m, lam: float) -> bool:
+        """Contrôle de séparation de P5 (v1.7), appliqué à lambda = 0."""
+        if lam != 0:
+            return True
+        return int(np.max(m.n_iter_)) < MAX_ITER and float(np.max(np.abs(m.coef_))) <= SEUIL_COEF
+
+    @staticmethod
+    def _extreme(m, x) -> bool:
+        """Une probabilité ajustée numériquement 0 ou 1 (v1.7.1, critère de glm.fit : 10 epsilon machine)."""
+        eps = 10 * np.finfo(float).eps
+        h = m.predict_proba(x)[:, 1]
+        return bool(np.any(h < eps) or np.any(h > 1 - eps))
+
+    def ajuster(self, d: dict, y_horizon: np.ndarray):
+        import warnings
+
+        from sklearn.exceptions import ConvergenceWarning
         from sklearn.model_selection import GroupKFold
 
         self.matrice = Matrice().ajuster(d)
@@ -264,20 +294,40 @@ class R2:
         issue = y_horizon  # l'événement n'est compté que s'il tombe dans l'horizon
         xp, yp, g, self.k_max = personne_periode(x, d["jours_issue"], issue, self.horizon)
         sirens = d["siren"][g]
-        scores = {}
+        scores, self.retraits = {}, []
         for lam in GRILLE_LAMBDA:
-            pertes = []
+            pertes, valide = [], True
             for app, val in GroupKFold(n_splits=5).split(xp, yp, sirens):
-                m = LogisticRegression(C=1.0 / (lam * len(app)), max_iter=2000, fit_intercept=False)
-                m.fit(xp[app], yp[app])
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", ConvergenceWarning)
+                    m = self._logit(lam, len(app)).fit(xp[app], yp[app])
+                if not self._valide(m, lam) or (lam == 0 and self._extreme(m, xp[app])):
+                    valide = False
+                    break
                 p = np.clip(m.predict_proba(xp[val])[:, 1], 1e-12, 1 - 1e-12)
                 pertes.append(float(-np.mean(yp[val] * np.log(p) + (1 - yp[val]) * np.log(1 - p))))
-            scores[lam] = float(np.mean(pertes))
-        self.lam = min(scores, key=scores.get)
+            if valide:
+                scores[lam] = float(np.mean(pertes))
+            else:
+                self.retraits.append({"lambda": lam, "etape": "validation croisee"})
+        for lam in sorted(scores, key=lambda l: (scores[l], -l)):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", ConvergenceWarning)
+                m = self._logit(lam, xp.shape[0]).fit(xp, yp)
+            if self._valide(m, lam) and not (lam == 0 and self._extreme(m, xp)):
+                self.lam, self.modele = lam, m
+                break
+            self.retraits.append({"lambda": lam, "etape": "ajustement final"})
         self.scores_cv = scores
-        self.modele = LogisticRegression(C=1.0 / (self.lam * xp.shape[0]), max_iter=2000, fit_intercept=False)
-        self.modele.fit(xp, yp)
+        self.p_x = x.shape[1]
         return self
+
+    def eta(self, d: dict) -> np.ndarray:
+        """Prédicteur linéaire par intervalle (n x k_max) : x w + w_k."""
+        x = self.matrice.construire(d)
+        w = self.modele.coef_[0]
+        base = np.asarray(x @ w[: self.p_x]).ravel()
+        return np.column_stack([base + w[self.p_x + k] for k in range(self.k_max)])
 
     def predire(self, d: dict) -> np.ndarray:
         from scipy import sparse

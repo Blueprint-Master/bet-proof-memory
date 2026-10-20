@@ -15,9 +15,9 @@ Ce dépôt tient deux rôles :
 
 | Chemin | Rôle |
 |---|---|
-| `protocole/q1-v1.7.md` | Protocole de la question 1 (défaillance à 548 jours), version en vigueur |
+| `protocole/q1-v1.7.1.md` | Protocole de la question 1 (défaillance à 548 jours), version en vigueur (v1.7 et précisions de mise en œuvre) |
 | `methode/critere-q1-*.md` | Thèses, critiques à l'aveugle et matrices qui ont fondé le critère de jugement de la v1.7 |
-| `protocole/q1-v1.6.md`, `q1-v1.5.md`, `q1-v1.4.md`, `q1-v1.3.md`, `q1-v1.2.md`, `q1-v1.1.md` | Versions précédentes, conservées ; chaque amendement est motivé dans le journal de la version suivante |
+| `protocole/q1-v1.7.md`, `q1-v1.6.md`, `q1-v1.5.md`, `q1-v1.4.md`, `q1-v1.3.md`, `q1-v1.2.md`, `q1-v1.1.md` | Versions précédentes, conservées ; chaque amendement est motivé dans le journal de la version suivante |
 | `registre/empreintes.md` | Empreintes datées des documents et des rapports |
 | `p0/p0_faisabilite.py` | P0 : schémas et métadonnées des sources |
 | `p0/p0_jointure.py` | P0 (v1.2) : part des bilans qui retrouvent leur avis de dépôt au BODACC, par année de clôture |
@@ -27,6 +27,9 @@ Ce dépôt tient deux rôles :
 | `ingestion/extraire.py` | Phase 5, étape 1 : instantanés figés des sources (ratios, BODACC sous garde du scellé, Sirene, totaux de bilan), avec manifeste et empreintes |
 | `ingestion/construire.py` | Phase 5, étape 2 : cas de l'espace de développement (origines 2008 à 2020), variables de l'annexe A, issues, couverture par origine |
 | `evaluation/references.py` | Phase 5, étape 3 : R0, R1 (Z'' d'Altman), R2 (hasard à temps discret) sur les trois plis du développement ; Brier, log-loss, AUC, calibration, gain bootstrap |
+| `evaluation/lgd.py` | P6 ter (v1.7) : perte en cas de défaut par modèle multi-états (Aalen-Johansen), seuils de décision de P6 |
+| `evaluation/critere.py` | P5 bis et P6 (v1.7) : témoin recalibré, assemblage en décalage, coût réalisé, bootstrap par grappes NAF, décomposition |
+| `evaluation/references_v17.py` | Réévaluation des références sous le critère de la v1.7, sur les trois plis |
 | `tests/` | Tests, sans accès réseau extérieur |
 
 ## Exécuter P0

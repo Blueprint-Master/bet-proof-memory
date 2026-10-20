@@ -23,7 +23,8 @@ Ce dépôt tient deux rôles :
 | `p0/p0_remplissage.py` | P0 (v1.2) : remplissage de chaque champ des ratios par niveau de confidentialité (comptages seuls) |
 | `p0/p0_sources.py` | P0 (v1.3) : couverture de Sirene et des bilans détaillés de Signaux Faibles |
 | `p0/p0_structure.py` | P0 (v1.4) : noms des clés de la liasse par type de bilan, nombre de bilans par année de clôture |
-| `tests/` | Tests de P0, sans accès réseau extérieur |
+| `ingestion/extraire.py` | Phase 5, étape 1 : instantanés figés des sources (ratios, BODACC sous garde du scellé, Sirene, totaux de bilan), avec manifeste et empreintes |
+| `tests/` | Tests, sans accès réseau extérieur |
 
 ## Exécuter P0
 

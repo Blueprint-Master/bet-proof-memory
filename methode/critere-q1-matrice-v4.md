@@ -37,3 +37,19 @@ Ce tour ne relève plus aucune objection de fond sur la décision, la perte ou l
 Les tours v0 à v3 ont porté sur le fond. Ils ont produit sept erreurs (E1 à E7), cinq corrections (B1 à B5), une dégénérescence et une décision respécifiée. Le tour sur le texte n'a soulevé que des points d'exécution, tous corrigés par écrit. Le dernier contrôle se fait sur deux plans :
 - un tour de vérification ciblé : les corrections X1 à X8 répondent-elles aux points soulevés ?
 - les tests unitaires du code qui exécutera P5 bis, P6 et P6 ter : un tiers exécute sans interpréter si le code est écrit à partir du texte et que ses tests passent.
+
+## 4. Tour de vérification ciblée (15:35 UTC, ChatGPT et Gemini, à l'aveugle l'un de l'autre)
+
+**Résolus pour les deux critiques** : X1, X2, X4, X5, X7, X8, ainsi que la projection de puissance.
+
+**Restés ouverts, puis corrigés par écrit dans le projet v1.7 :**
+- **Support à τ** (les deux). « Restent observées » était ambigu. Une procédure est désormais suivie jusqu'à τ si sa date de jugement tombe au plus tard le 30/09/2022 moins τ, liquidations comprises. Si τ descend sous 365 jours, c'est un arrêt.
+- **Convergence de a_k et de b dans l'assemblage** (les deux). Toute valeur de λ est retirée en cas de non-convergence, ou si a_k ou b dépasse 50. S'il ne reste aucune valeur, le candidat n'est pas admis.
+- **Cas 0/0** (Gemini) : si P_L + P_plan = 0, alors w = 1. **Cas g ≤ 0** : L_min est « sans objet ».
+- **Prime après défaut** (ChatGPT). f devient f̄, l'espérance conditionnelle à la défaillance : la date réalisée n'est pas connue au moment de décider.
+
+**Reste une convention, pas une erreur** : la base de q. ChatGPT la juge « non résolue » parce qu'elle n'est pas établie par le contrat. C'est exact, et le texte la déclare comme une convention de scénario.
+
+**Erreur relevée dans une critique.** Gemini déclare « résolu » le point X3 sur le support, puis signale ce même support comme nouvelle erreur bloquante. Son second constat est le bon.
+
+**Arrêt des tours.** Aucune objection de fond n'est restée ouverte depuis le tour sur le texte. Les cas limites d'exécution relèvent maintenant des tests du code qui appliquera P5 bis, P6 et P6 ter.

@@ -1,4 +1,4 @@
-# Cycle 1 : cahier des charges des mécanismes candidats (protocole Q1 v1.6, P7)
+# Cycle 1 : cahier des charges des mécanismes candidats (protocole Q1 v1.7.1, P7)
 
 Destinataires : les IA génératrices (ChatGPT, Gemini, Mistral) et l'IA vérificatrice (Claude). Version figée et horodatée au registre avant tout envoi.
 
@@ -6,7 +6,9 @@ Destinataires : les IA génératrices (ChatGPT, Gemini, Mistral) et l'IA vérifi
 
 Prédire la défaillance (redressement ou liquidation judiciaire, au sens de P3) d'une société commerciale française dans les 548 jours suivant une origine t0 (30 septembre), mieux que la référence R2.
 
-R2 est un modèle de hasard à temps discret, ajusté par régression logistique pénalisée, sur les variables de l'annexe A :
+**La décision servie.** Un fournisseur choisit, pour chaque client, d'assurer sa créance par une assurance-crédit ou de garder le risque. Il assure si la probabilité de défaillance dépasse un seuil compris entre **1,13 % et 2,90 %** (selon le délai de paiement et la part indemnisée), pour un taux moyen de 1,31 %. Un mécanisme utile est donc un mécanisme qui **range mieux les sociétés de part et d'autre de cette zone**, pas seulement qui améliore la moyenne.
+
+R2 est un modèle de hasard à temps discret, ajusté par régression logistique (sans pénalité, selon la validation croisée), sur les variables de l'annexe A :
 - ratios du dernier bilan connu à t0 ;
 - total de bilan ;
 - retard de dépôt ;
@@ -53,7 +55,7 @@ Toutes datées par leur publication, et lues avant t0 seulement.
 
 ## 4. Règle d'admission (non négociable)
 
-Un mécanisme est ajouté à R2, avec le même estimateur et la même procédure. Il est **admis** si et seulement s'il améliore le score de Brier de R2 sur chacun des trois plis temporels du développement :
+Le mécanisme est évalué seul : il est ajouté au prédicteur figé de R2, avec une ordonnée par intervalle et une pente recalibrées (P5 bis), et seul son coefficient est pénalisé. Il est **admis** si et seulement s'il réduit le coût réalisé de la décision (P6 : coût moyen par euro d'encours, sous les six scénarios de seuil) par rapport au témoin, R2 recalibré, sur chacun des trois plis temporels du développement :
 - 2018 vers 2019, à 365 jours ;
 - 2018 et 2019 vers 2020, à 365 jours ;
 - 2018 vers 2020, à 548 jours.
@@ -74,4 +76,12 @@ Un mécanisme est ajouté à R2, avec le même estimateur et la même procédure
 - Aucune issue individuelle.
 - Aucune donnée du scellé.
 
-Seuls sont transmis ce cahier, le protocole public, et les mesures agrégées de R0, R1 et R2 sur le développement, une fois connues.
+Seuls sont transmis ce cahier, le protocole public, et les mesures agrégées de R0, R1 et R2 sur le développement :
+
+| Pli | Perte R0 | Perte R1 | Perte R2 | AUC R2 |
+|---|---|---|---|---|
+| 365 j, 2018 vers 2019 | 0,00710 | 0,00710 | 0,00621 | 0,747 |
+| 365 j, 2018-2019 vers 2020 | 0,00588 | 0,00585 | 0,00519 | 0,748 |
+| 548 j, 2018 vers 2020 | 0,00952 | 0,00969 | 0,00847 | 0,741 |
+
+À 548 jours, la perte de R2 se décompose en miscalibration 0,00024, discrimination 0,00167 et incertitude 0,00990. R2 capte environ 17 % de l'incertitude : la marge de progrès est surtout dans la discrimination.

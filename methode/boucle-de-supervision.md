@@ -4,7 +4,9 @@
 
 Note de cadrage, 21 octobre 2026. Rédigée par Claude pour Rémi Cabrit. Ce document se suffit à lui-même : il expose le problème, les idées reçues qu'il faut abandonner, le cadre théorique avec ses sources, la grammaire des objets, le processus sous forme de machine à états, un exemple déroulé, puis le protocole de test préenregistré. Après lui, l'exécution n'est plus que de la mise en œuvre.
 
-Convention de lecture. Les références marquées **[vérifié]** ont été retrouvées dans un catalogue bibliographique ou sur Légifrance pendant la rédaction. Celles marquées **[de mémoire]** sont des classiques cités de mémoire, à vérifier avant le gel. Les chiffres cités proviennent d'exécutions enregistrées, et sont datés.
+**Statut : gelée le 21/10/2026** sur validation de Rémi Cabrit, après deux tours de critique à l'aveugle (ChatGPT, Gemini, Mistral). Toute modification ultérieure passe par un erratum inscrit au registre des empreintes, sans effacer ce texte.
+
+Convention de lecture. Les références marquées **[vérifié]** ont été retrouvées dans un catalogue bibliographique, sur arXiv ou sur Légifrance. Celles marquées **[de mémoire]** n'ont pas été retrouvées ; aucune conclusion de la note n'en dépend. Les chiffres cités proviennent d'exécutions enregistrées, et sont datés.
 
 ---
 
@@ -57,7 +59,7 @@ Vrai sur un point, faux sur trois.
 - la **couverture** : des axes déclarés d'avance, et chaque case vide l'est pour une raison écrite ;
 - le **test de résidu** : si la prévision annonçait un gain de 3 points, que 1 point est observé, et que les obstacles vérifiés se sont comportés comme prévu, les 2 points d'écart mesurent ce que l'arbre ne contient pas. L'exhaustivité ne se constate pas sur une liste ; son défaut se mesure, après coup, sur l'écart inexpliqué.
 
-**Deuxième point faux : les sous-questions ne sont pas indépendantes.** Résoudre chaque question localement ne compose pas en solution globale si les questions interagissent. L'économie du bien-être en a un résultat précis, le théorème du second rang (Lipsey et Lancaster, 1956 [vérifié]) : quand une condition de l'optimum ne peut pas être remplie, pousser les autres à leur valeur « parfaite » n'est en général plus optimal. Ce théorème vaut sous ses hypothèses économiques ; la boucle en retient, par analogie déclarée, une leçon structurelle : on n'a pas le droit de **supposer** que les étapes sont indépendantes. Une bonne décomposition est celle où les interactions sont faibles ou explicitement déclarées (systèmes « presque décomposables » : Simon, 1962 [de mémoire]). Concrètement, chaque lien entre deux branches est un objet à part entière, avec sa règle d'agrégation et son statut de vérification.
+**Deuxième point faux : les sous-questions ne sont pas indépendantes.** Résoudre chaque question localement ne compose pas en solution globale si les questions interagissent. L'économie du bien-être en a un résultat précis, le théorème du second rang (Lipsey et Lancaster, 1956 [vérifié]) : quand une condition de l'optimum ne peut pas être remplie, pousser les autres à leur valeur « parfaite » n'est en général plus optimal. Ce théorème vaut sous ses hypothèses économiques ; la boucle en retient, par analogie déclarée, une leçon structurelle : on n'a pas le droit de **supposer** que les étapes sont indépendantes. Une bonne décomposition est celle où les interactions sont faibles ou explicitement déclarées (systèmes « presque décomposables » : Simon, 1962 [vérifié par réimpression]). Concrètement, chaque lien entre deux branches est un objet à part entière, avec sa règle d'agrégation et son statut de vérification.
 
 **Troisième point faux : ce n'est pas une succession, c'est une politique.** Beaucoup de sous-questions ne sont pas binaires (combien de stock, quelle priorité), et surtout l'information arrive en cours de route. Le bon chemin n'est pas une liste d'actions fixée d'avance ; c'est un arbre de décisions conditionnelles où « mesurer » est souvent la meilleure action suivante. C'est le cadre des décisions sous observation partielle (Kaelbling, Littman et Cassandra, 1998 [vérifié]). Et toutes les questions n'ont pas le même poids : on mesure d'abord ce dont la réponse change le plus la décision, à coût égal (valeur de l'information : Howard, 1966 [de mémoire]).
 
@@ -107,7 +109,7 @@ Voir 2.3 et 2.4. **Ce que cela impose.** L'état attendu de chaque étape ne se 
 
 ### 3.5 Contraintes dures et critères
 
-**Idée.** Deux natures de critères ne se mélangent pas. Les **contraintes dures** décident de la faisabilité (droit, sécurité des aliments, sécurité des personnes, qualité) : une solution qui en viole une est éliminée, quel que soit son coût. Les **critères** départagent les solutions faisables (coût, délai, robustesse) : on garde celles qu'aucune autre ne domine (une solution en domine une autre si elle n'est moins bonne sur aucun critère et strictement meilleure sur au moins un), c'est le front de Pareto, puis on tranche par des préférences explicites (analyse multicritère : Keeney et Raiffa, 1976 ; Roy, méthodes ELECTRE [de mémoire]). Pour une décision courante, une solution « satisfaisante » qui dépasse un seuil suffit (Simon, 1955 [vérifié]) ; le front de Pareto est réservé aux décisions lourdes.
+**Idée.** Deux natures de critères ne se mélangent pas. Les **contraintes dures** décident de la faisabilité (droit, sécurité des aliments, sécurité des personnes, qualité) : une solution qui en viole une est éliminée, quel que soit son coût. Les **critères** départagent les solutions faisables (coût, délai, robustesse) : on garde celles qu'aucune autre ne domine (une solution en domine une autre si elle n'est moins bonne sur aucun critère et strictement meilleure sur au moins un), c'est le front de Pareto, puis on tranche par des préférences explicites (analyse multicritère : Keeney et Raiffa, 1976 [vérifié] ; Roy, 1968, méthode ELECTRE [vérifié]). Pour une décision courante, une solution « satisfaisante » qui dépasse un seuil suffit (Simon, 1955 [vérifié]) ; le front de Pareto est réservé aux décisions lourdes.
 
 **Ce que cela impose.** Une contrainte dure a trois statuts distincts : la **source** (lue par un outil, avec date), l'**énoncé formel**, l'**applicabilité** au cas. Les deux derniers sont proposés par le modèle et vérifiés sans modèle de langage, par l'un de trois moyens : une **règle enregistrée**, c'est-à-dire une formalisation validée en amont par un juriste nommé, versionnée, dont les prémisses viennent de champs structurés natifs des outils ou d'un humain nommé, jamais d'une extraction sémantique du modèle (sinon la règle ne vérifie que sa propre logique sur des prémisses choisies par le modèle) ; du **code**, dans un domaine formalisé de la même façon ; un **lecteur humain nommé**, avec date et sources, obligatoire pour tout cas interprétatif. Un chemin est **bloqué** par une contrainte si l'applicabilité de celle-ci est vérifiée ou inconnue **et** que le respect de la contrainte par le chemin est contredit ou inconnu ; un chemin qui respecte la contrainte dans tous les cas n'est pas bloqué par un doute sur son applicabilité. La boucle distingue « infaisable » (violation vérifiée) de « faisabilité non établie » (inconnu) : le second appelle une mesure ou une escalade avant une abstention. Quand l'ensemble des solutions faisables est vide, la boucle ne classe pas : elle remonte à l'arbre, mesure, escalade ou s'abstient.
 
@@ -149,7 +151,7 @@ Voir 2.3 et 2.4. **Ce que cela impose.** L'état attendu de chaque étape ne se 
 
 **Pourquoi une priorité et non une valeur d'information.** La valeur d'information attendue (Howard, 1966 [de mémoire]) exige une distribution de probabilité sur l'inconnu et une utilité des décisions. Par définition, un inconnu n'a pas de probabilité vérifiée ; si le modèle la fournit, c'est un `propose`, et la règle 1 lui interdit de décider d'une expérience réelle. L'ordonnanceur calcule donc, par code et sur le seul arbre ancré, une **priorité topologique** : nombre de chemins bloqués que la mesure débloque, poids de l'inconnu sur le résidu publié, divisés par le coût lu dans le contrat de l'outil. C'est une heuristique, nommée comme telle ; la valeur d'information reste l'horizon vers lequel elle tend quand des précédents vérifiés fournissent des fréquences.
 
-**Sources.** Exploration autonome avec objectifs auto-générés (Forestier et al., 2022 [de mémoire]) ; planification et apprentissage intégrés (Sutton, 1990 [de mémoire]). Ces travaux fournissent les mécanismes ; leur transposition à des problèmes d'entreprise est une hypothèse d'ingénierie à tester.
+**Sources.** Exploration autonome avec objectifs auto-générés (Forestier et al., 2017 [vérifié]) ; planification et apprentissage intégrés (Sutton, 1990 [vérifié]). Ces travaux fournissent les mécanismes ; leur transposition à des problèmes d'entreprise est une hypothèse d'ingénierie à tester.
 
 **Ce que cela impose.** Un état d'ordonnancement qui reçoit les inconnus de l'arbre ancré, les chemins bloqués, le résidu s'il existe, le budget restant et le mandat, et renvoie la prochaine mesure autorisée ou un arrêt (saturation : aucune mesure autorisée ne lève plus d'inconnu structurant à un coût admissible). Il choisit d'abord parmi les mesures autorisées ; il n'escalade que si aucune mesure autorisée ne lève un inconnu structurant et qu'une mesure hors mandat le ferait. La mesure retenue n'est pas exécutée par l'ordonnanceur : elle entre dans un chemin, passe le filtre et le contrôle avant action comme toute action. La continuité est une reprise sur événement ou échéance, pas une consommation permanente.
 
@@ -284,6 +286,8 @@ Ce que l'exemple montre : la boucle ne promet pas 98 %. Elle promet de dire ce q
 
 **Ce que ce palier teste, et seulement cela.** La discipline d'ancrage sur une tâche presque déterministe : respecter les dates, n'avancer que des preuves tracées et nécessaires, s'abstenir quand la question ne se pose pas, et ne pas s'écarter de D sans preuve. La construction d'arbre, la rétroaction et l'autonomie ne sont pas testées ici (section 8). Un succès n'établirait pas que la boucle décide mieux qu'un code ; il établirait qu'un modèle sous discipline s'écarte moins du code et viole moins de règles que le même modèle en usage libre.
 
+**Ce qui est acquis par construction.** Dans B, la machine bloque par code toute requête postérieure à t0 et toute décision sans ses preuves nécessaires : B ne peut pas commettre les violations M2 (d) et M2 (e). C'est voulu, la discipline est une architecture et non une consigne ; mais la condition du verdict sur les violations est en partie gagnée d'avance. Les violations sont donc publiées par type, et l'information nouvelle du palier tient dans Δ, dans l'écart à D (M5) et dans les abstentions, qui ne sont pas acquises par construction.
+
 ### 7.2 Domaine et cas
 
 **Domaine.** La prévision de défaillance d'entreprises françaises, selon un protocole public préenregistré (dépôt `bet-proof-memory`, protocole v1.7.1). La vérité vient des faits : défaillance ou non dans les 548 jours suivant une date d'origine. Le coût réalisé d'une décision y est défini : un fournisseur choisit de couvrir le risque d'une contrepartie par une assurance-crédit (prime π du chiffre d'affaires, part indemnisée q) ou de le conserver (perte LGD en cas de défaillance) ; la décision optimale est de couvrir si la probabilité de défaillance dépasse πT / (q LGD), T étant la rotation de l'encours sur l'horizon.
@@ -291,6 +295,10 @@ Ce que l'exemple montre : la boucle ne promet pas 98 %. Elle promet de dire ce q
 **Cas.** Un couple (SIREN, t0 = 30/09/2020), tiré dans la seule **origine 2020**, avec la question « couvrir ou conserver, sous le scénario s », s étant tiré parmi six scénarios préenregistrés (délai de paiement 30, 45, 60 jours ; part indemnisée 70 %, 90 % ; prime 0,1 %).
 
 **L'outil de prévision et la provenance temporelle.** Aucune étape de la chaîne qui produit la prévision ne doit avoir vu une issue postérieure à t0 : ni l'ajustement, ni la sélection des variables, ni le choix des hyperparamètres, ni la calibration, ni les séries sectorielles. Un modèle dont les variables ont été admises sur des plis aux issues de 2021 ou 2022 ne convient pas, même s'il est ensuite réajusté sur 2018. L'outil est donc un **modèle dédié**, dont toute la spécification est fixée par validation croisée interne à l'origine 2018 (issues closes le 31/03/2020), figé, à empreinte publiée, avec un audit de provenance temporelle publié avant le tirage. Les ratios sont filtrés par **date de dépôt** des comptes au greffe strictement antérieure à t0, pas par date de clôture.
+
+**Validation croisée interne, spécifiée.** Cinq plis formés par grappes de division NAF (deux chiffres), de sorte qu'un secteur ne soit jamais à la fois dans l'ajustement et dans le contrôle ; répartition des divisions entre plis tirée avec une graine publiée, équilibrée sur le nombre de défaillants. Candidats repris : les 35 du premier cycle, évalués un à un contre le témoin comme dans le protocole du juge du réel. Admission : perte moyenne réduite **et** perte réduite sur au moins quatre plis sur cinq. λ choisi dans la même grille par la même validation croisée. Parce qu'une seule origine contient peu de défaillants par pli, la sélection peut être instable : la fréquence d'admission de chaque candidat sur 20 répartitions tirées au sort est publiée, et seuls entrent dans le modèle dédié les candidats admis dans au moins 15 répartitions sur 20. Ces règles sont des choix de conception, déclarés comme tels.
+
+**Seuils de décision et LGD.** La LGD qui fixe les seuils (0,8995) a été estimée sur des procédures suivies par des annonces parues jusqu'au 30/09/2022 : elle contient de l'information postérieure à t0. La recalculer sur des annonces antérieures à t0 n'est pas possible avec un horizon de suivi de 1 095 jours, faute de procédures suivies assez longtemps. Elle est donc traitée comme un **paramètre du scénario**, déclaré comme postérieur à t0, fourni identiquement à B, T1, T0 et D : il ne favorise aucun système, mais il détermine quels cas sont proches du seuil. Le verdict est publié en secondaire sous une LGD de 0,70, valeur arbitraire déclarée, pour montrer sa sensibilité à ce paramètre.
 
 **Pseudonymisation.** Le modèle de langage ne voit **ni SIREN ni raison sociale**. Il reçoit un identifiant de cas opaque ; les outils le résolvent côté serveur ; leurs sorties sont expurgées des noms, adresses et identifiants. Les annonces légales sont servies en **codes structurés** (nature de l'annonce, date), jamais en texte libre, parce qu'un texte d'annonce suffit souvent à réidentifier une société mémorisée. Motif : le modèle peut avoir mémorisé, lors de son entraînement, le sort de sociétés françaises de 2018 à 2022. La pseudonymisation réduit ce risque sans le supprimer ; la reconnaissance par les seuls ratios est jugée improbable, et c'est une hypothèse déclarée.
 
@@ -393,28 +401,43 @@ Chaque livrable est testé et son empreinte publiée avant d'être utilisé.
 
 ---
 
-## Annexe. Références
+## Annexe A. Travaux voisins et positionnement
 
-**Vérifiées pendant la rédaction (catalogue OpenAlex ou Légifrance) :**
+Revue ciblée, non systématique, faite le 21/10/2026 (catalogue OpenAlex et recherche web). Elle ne permet pas d'affirmer une nouveauté ; elle situe la boucle par rapport à ses voisins les plus proches.
+
+- **Dossiers de sûreté** (notation GSN : Kelly, 2004). Revendications, arguments et preuves organisés en arbre, chaque élément justifié par une preuve. C'est le parent le plus proche de la grammaire de la section 4. Différence : un dossier de sûreté justifie un système après conception ; la boucle conditionne chaque exécution au statut de ses champs. Des travaux récents font produire ou relire des dossiers GSN par des modèles de langage ; la boucle interdit précisément qu'un modèle de langage vérifie.
+- **Option de rejet** (Chow, 1970). Le droit de s'abstenir quand le risque d'erreur dépasse le coût du rejet. L'abstention de la boucle en est une forme, étendue aux inconnus structurels et non seulement à l'incertitude d'une prédiction.
+- **Portes de preuve pour agents de recherche** (EviBound : Chen, 2025, arXiv 2511.05524). Une porte avant exécution sur un contrat d'acceptation, une porte après exécution vérifiée par code (le résultat n'est promu que si la preuve existe). Évaluation sur 8 tâches, une exécution par système, sans test statistique ; le vérificateur du score est la règle même de la porte. C'est le même mécanisme que la règle 1, et la même fragilité que celle déclarée en 7.1 (« ce qui est acquis par construction »).
+- **Abstention des agents outillés** (AgentAbstain : Liu et al., 2026, arXiv 2607.10059). Banc de 263 paires de tâches presque identiques, l'une où il faut agir, l'autre où il faut s'abstenir ; meilleur modèle à 59,5 % de réussite appariée ; les modèles s'abstiennent moins bien qu'ils n'agissent. Les pièges du palier 1 (liquidation avant t0 : s'abstenir ; liquidation après t0 : agir) suivent la même logique appariée, qui empêche un refus systématique de bien noter.
+
+**Ce qui paraît moins courant, sous réserve d'une revue systématique :** le statut d'ancrage par champ comme condition d'exécution, appliqué aussi à la structure (liens, agrégation, applicabilité) ; le test de résidu comme mécanisme de correction de la structure ; l'évaluation préenregistrée de la discipline contre un témoin à outils, informations et règles égaux, avec une référence déterministe et une inférence appariée.
+
+## Annexe B. Références
+
+**Vérifiées (catalogue OpenAlex, arXiv ou Légifrance) :**
 - Boehm, B. W. (1984). Verifying and Validating Software Requirements and Design Specifications. *IEEE Software*. DOI 10.1109/ms.1984.233702.
+- Chen (2025). Evidence-Bound Autonomous Research (EviBound): A Governance Framework for Eliminating False Claims. arXiv 2511.05524.
+- Chow, C. K. (1970). On optimum recognition error and reject tradeoff. *IEEE Transactions on Information Theory*. DOI 10.1109/tit.1970.1054406.
 - Dardenne, A., van Lamsweerde, A. et Fickas, S. (1993). Goal-directed requirements acquisition. *Science of Computer Programming*. DOI 10.1016/0167-6423(93)90021-g.
 - Fikes, R. E. et Nilsson, N. J. (1971). STRIPS: A new approach to the application of theorem proving to problem solving. *Artificial Intelligence*. DOI 10.1016/0004-3702(71)90010-5.
+- Forestier, S., Portelas, R., Mollard, Y. et Oudeyer, P.-Y. (2017). Intrinsically Motivated Goal Exploration Processes with Automatic Curriculum Learning. arXiv 1708.02190. (La publication en revue, 2022, est de mémoire.)
 - Kaelbling, L. P., Littman, M. L. et Cassandra, A. R. (1998). Planning and acting in partially observable stochastic domains. *Artificial Intelligence*. DOI 10.1016/s0004-3702(98)00023-x.
 - Kambhampati, S. et al. (2024). LLMs Can't Plan, But Can Help Planning in LLM-Modulo Frameworks. arXiv 2402.01817.
+- Keeney, R. L. et Raiffa, H. (1976). Decisions with Multiple Objectives: Preferences and Value Tradeoffs. New York, Wiley (édition attestée par ses comptes rendus, dont von Winterfeldt, *Psychometrika*, 1977, DOI 10.1007/bf02293664).
+- Kelly, T. (2004). The Goal Structuring Notation: A Safety Argument Notation (OpenAlex W135733646).
 - Lipsey, R. G. et Lancaster, K. (1956). The General Theory of Second Best. *Review of Economic Studies*. DOI 10.2307/2296233.
+- Liu, X. et al. (2026). AgentAbstain: Do LLM Agents Know When Not to Act? arXiv 2607.10059.
 - Mackie, J. L. (1965). Causes and Conditions. *American Philosophical Quarterly*.
-- McCarthy, J. (1980). Circumscription, a form of non-monotonic reasoning. *Artificial Intelligence*. DOI 10.1016/0004-3702(80)90011-9. (La référence est vérifiée ; l'attribution du problème de la qualification à cet article est de mémoire.)
+- McCarthy, J. (1980). Circumscription, a form of non-monotonic reasoning. *Artificial Intelligence*. DOI 10.1016/0004-3702(80)90011-9. (L'attribution du problème de la qualification à cet article est de mémoire.)
+- Roy, B. (1968). Classement et choix en présence de points de vue multiples (la méthode ELECTRE). *Revue française d'informatique et de recherche opérationnelle*. DOI 10.1051/ro/196802v100571.
 - Simon, H. A. (1955). A Behavioral Model of Rational Choice. *Quarterly Journal of Economics*. DOI 10.2307/1884852.
+- Simon, H. A. The Architecture of Complexity, réimpression 1991, DOI 10.1007/978-1-4899-0718-9_31 (parution originale 1962, *Proceedings of the American Philosophical Society*, de mémoire).
+- Sutton, R. S. (1990). Integrated Architectures for Learning, Planning, and Reacting Based on Approximating Dynamic Programming. DOI 10.1016/b978-1-55860-141-3.50030-4.
 - van Lamsweerde, A. et Letier, E. (2000). Handling obstacles in goal-oriented requirements engineering. *IEEE Transactions on Software Engineering*. DOI 10.1109/32.879820.
 - Code du travail, art. L. 3121-18 et L. 3121-20 (Légifrance, lus le 21/10/2026).
 
-**De mémoire, à vérifier avant le gel :**
-- Simon, H. A. (1962). The Architecture of Complexity. *Proceedings of the American Philosophical Society*.
-- Keeney, R. L. et Raiffa, H. (1976). Decisions with Multiple Objectives.
-- Roy, B., méthodes ELECTRE.
-- Hart, H. L. A. (1961). The Concept of Law, sur la texture ouverte du droit.
-- Goldratt, E. M., arbre des prérequis (processus de réflexion de la théorie des contraintes).
-- Howard, R. A. (1966). Information Value Theory. *IEEE Transactions on Systems Science and Cybernetics*.
-- Arbres de défaillances, norme CEI 61025.
-- Forestier, S. et al. (2022). Intrinsically Motivated Goal Exploration Processes. *JMLR*.
-- Sutton, R. S. (1990). Integrated Architectures for Learning, Planning, and Reacting (architecture Dyna).
+**De mémoire, non retrouvées en catalogue :**
+- Goldratt, E. M., arbre des prérequis (processus de réflexion de la théorie des contraintes). Ouvrages, hors catalogue.
+- Hart, H. L. A. (1961). The Concept of Law, sur la texture ouverte du droit. Ouvrage, hors catalogue.
+- Howard, R. A. (1966). Information Value Theory. *IEEE Transactions on Systems Science and Cybernetics*. Deux recherches sans résultat ; la référence est citée en horizon, aucune conclusion n'en dépend.
+- Arbres de défaillances, norme CEI 61025. Norme, hors catalogue.

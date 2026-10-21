@@ -107,9 +107,9 @@ Voir 2.3 et 2.4. **Ce que cela impose.** L'état attendu de chaque étape ne se 
 
 ### 3.5 Contraintes dures et critères
 
-**Idée.** Deux natures de critères ne se mélangent pas. Les **contraintes dures** décident de la faisabilité (droit, sécurité des aliments, sécurité des personnes, qualité) : une solution qui en viole une est éliminée, quel que soit son coût. Les **critères** départagent les solutions faisables (coût, délai, robustesse) : on garde celles qu'aucune autre ne bat sur tous les critères (front de Pareto), puis on tranche par des préférences explicites (analyse multicritère : Keeney et Raiffa, 1976 ; Roy, méthodes ELECTRE [de mémoire]). Pour une décision courante, une solution « satisfaisante » qui dépasse un seuil suffit (Simon, 1955 [vérifié]) ; le front de Pareto est réservé aux décisions lourdes.
+**Idée.** Deux natures de critères ne se mélangent pas. Les **contraintes dures** décident de la faisabilité (droit, sécurité des aliments, sécurité des personnes, qualité) : une solution qui en viole une est éliminée, quel que soit son coût. Les **critères** départagent les solutions faisables (coût, délai, robustesse) : on garde celles qu'aucune autre ne domine (une solution en domine une autre si elle n'est moins bonne sur aucun critère et strictement meilleure sur au moins un), c'est le front de Pareto, puis on tranche par des préférences explicites (analyse multicritère : Keeney et Raiffa, 1976 ; Roy, méthodes ELECTRE [de mémoire]). Pour une décision courante, une solution « satisfaisante » qui dépasse un seuil suffit (Simon, 1955 [vérifié]) ; le front de Pareto est réservé aux décisions lourdes.
 
-**Ce que cela impose.** Une contrainte dure a trois statuts distincts : la **source** (lue par un outil, avec date), l'**énoncé formel**, l'**applicabilité**. Les deux derniers sont proposés par le modèle et vérifiés par une règle enregistrée, un lecteur humain nommé ou du code, jamais par un autre modèle de langage. Une contrainte dont l'applicabilité est inconnue bloque les chemins qu'elle concerne. Quand l'ensemble des solutions faisables est vide, la boucle ne classe pas : elle remonte à l'arbre ou s'abstient.
+**Ce que cela impose.** Une contrainte dure a trois statuts distincts : la **source** (lue par un outil, avec date), l'**énoncé formel**, l'**applicabilité** au cas. Les deux derniers sont proposés par le modèle et vérifiés sans modèle de langage, par l'un de trois moyens : une **règle enregistrée**, c'est-à-dire une formalisation validée en amont par un juriste nommé, versionnée, dont les prémisses viennent de champs structurés natifs des outils ou d'un humain nommé, jamais d'une extraction sémantique du modèle (sinon la règle ne vérifie que sa propre logique sur des prémisses choisies par le modèle) ; du **code**, dans un domaine formalisé de la même façon ; un **lecteur humain nommé**, avec date et sources, obligatoire pour tout cas interprétatif. Un chemin est **bloqué** par une contrainte si l'applicabilité de celle-ci est vérifiée ou inconnue **et** que le respect de la contrainte par le chemin est contredit ou inconnu ; un chemin qui respecte la contrainte dans tous les cas n'est pas bloqué par un doute sur son applicabilité. La boucle distingue « infaisable » (violation vérifiée) de « faisabilité non établie » (inconnu) : le second appelle une mesure ou une escalade avant une abstention. Quand l'ensemble des solutions faisables est vide, la boucle ne classe pas : elle remonte à l'arbre, mesure, escalade ou s'abstient.
 
 ### 3.6 Chiffrage et incertitude
 
@@ -121,7 +121,7 @@ Voir 2.3 et 2.4. **Ce que cela impose.** L'état attendu de chaque étape ne se 
 
 **Idée.** Le génie logiciel distingue (Boehm, 1984 [vérifié]) la **vérification** (construit-on la chose correctement : justesse du calcul, forme exécutable) et la **validation** (construit-on la bonne chose : le but atteint est-il le but voulu). Le **coût** s'ajoute, mesuré sur le cycle complet.
 
-**Ce que cela impose.** Quatre vérificateurs distincts : justesse par un recalcul indépendant (code, pas modèle) ; forme par un test d'exécutabilité ; fond par le critère de l'état souhaité quand il est observable, sinon par une **prévision enregistrée** dont le verdict viendra des faits, avec une règle de score propre (une observation isolée ne valide pas une probabilité, il faut une série) ; coût par la boucle elle-même.
+**Ce que cela impose.** Quatre vérificateurs distincts : justesse par un recalcul indépendant (code, pas modèle) ; forme par un test d'exécutabilité ; fond par le critère de l'état souhaité quand il est observable, sinon par une **prévision enregistrée** dont le verdict viendra des faits ; coût par la boucle elle-même. Deux choses se mesurent différemment sur le fond. Le **coût d'une décision** se mesure sur un cas, par son coût réalisé sur l'issue observée. La **qualité d'une probabilité** se mesure sur une série, par une règle de score propre, le score de Brier, moyenne de (p − y)², avec un effectif minimal déclaré dans le cas ; une observation isolée ne valide ni n'invalide une probabilité. Une prévision non encore résolue n'est jamais un fait vérifié ; elle sert à calculer une espérance de coût, pas à affirmer une issue.
 
 ### 3.8 Actions irréversibles et abstention
 
@@ -172,7 +172,7 @@ Tous les objets manipulés par la boucle appartiennent à l'une des classes suiv
 | **But** | énoncé ; liens avec les sous-buts (ET / OU), chacun avec son statut ; règle d'agrégation (comment les contributions des enfants se combinent, déclarée avant exécution, ou `inconnu`) ; couverture (nombre de générateurs) | générateurs multiples | feuilles : ancrage ; liens : test de cohérence par code ; agrégation : déclaration explicite ; couverture : code |
 | **Obstacle** | énoncé ; but visé ; existence ; estimation typée ; impact ; contribution observée à l'écart (après verdict) | modèle (énoncé) ; outil, donnée ou précédent (existence, estimation) | chaque champ a son statut ; la contribution observée vient du vérificateur du fond |
 | **Parade** | actions ; obstacle visé | modèle | voir Action |
-| **Contrainte dure** | source lue (référence, texte, date, outil) ; énoncé formel ; applicabilité | outil (lecture) ; modèle (énoncé, applicabilité) | source : outil (intégrité, date) ; énoncé et applicabilité : règle enregistrée, humain nommé ou code ; jamais un modèle de langage |
+| **Contrainte dure** | source lue (référence, texte, date, outil) ; énoncé formel ; applicabilité au cas ; respect par chaque chemin | outil (lecture) ; modèle (énoncé, applicabilité, respect) | source : outil (intégrité, date) ; énoncé, applicabilité et respect : règle enregistrée (formalisation validée par un juriste nommé, prémisses structurées), code ou humain nommé ; jamais un modèle de langage |
 | **Critère** | grandeur, unité, sens, poids ou seuil | décideur (préférences) ; modèle (proposition) | déclaration explicite du décideur |
 | **Action** | préconditions ; effets anticipés ; effets observés ; coût ; durée ; réversibilité ; droits ; clé d'idempotence | modèle (proposition) ; registre (contrat) | préconditions revérifiées avant chaque exécution ; effets observés après ; coût et droits par le contrat |
 | **Mesure** | action dont l'effet est de lever un inconnu ; inconnu visé ; priorité (chemins débloqués, poids sur le résidu, coût) ; coût | modèle (proposition) ; ordonnanceur (priorité, par code) | comme une action ; l'effet « inconnu levé » est anticipé jusqu'à résultat |
@@ -220,7 +220,7 @@ S10 Analyse d'écart → résidu > seuil → S2 (consigne : le résidu, dans la 
 | **S2 Arbre** | état souhaité ; consigne éventuelle (résidu) | générateurs multiples et indépendants ; outils : lecture des sources | code : fusion des dépôts, doublons, couverture par nœud ; aucun jugement de fond | arbre proposé, avec couverture | S3 |
 | **S3 Ancrage** | arbre proposé | outils, données, précédents (3.10), lecteurs humains | statut par champ ; code : cohérence des liens, coupes minimales sur le sous-arbre vérifié | arbre ancré ; inconnus (structurants ou non) ; couverture | S2 si un nœud est contredit (deux fois au plus, puis ABSTENTION) ; S11 s'il reste des inconnus ; sinon S4 |
 | **S4 Chemins et mesures** | arbre ancré ; mesures retenues par S11 | modèle : actions et mesures ; registre : contrats | jonction (3.3) ; chaque effet est anticipé | chemins candidats avec coût, durée, réversibilité, inconnus restants | S3 si une action révèle une précondition non ancrée ; ABSTENTION si aucun chemin ; sinon S5 |
-| **S5 Filtre et choix** | chemins candidats | code : contraintes dures vérifiées ; code : Pareto ou seuil ; décideur : préférences | une contrainte inconnue bloque le chemin ; un inconnu structurant non couvert par une mesure du chemin bloque le chemin | chemin retenu, ou front de Pareto soumis | S2 si l'ensemble faisable est vide (deux fois au plus) ; ABSTENTION si tous les chemins sont bloqués ; ESCALADE si plusieurs chemins non dominés sans préférences ; sinon S6 |
+| **S5 Filtre et choix** | chemins candidats | code : contraintes dures vérifiées ; code : Pareto ou seuil ; décideur : préférences | une contrainte bloque le chemin si son applicabilité est vérifiée ou inconnue et que son respect par le chemin est contredit ou inconnu ; un inconnu structurant non couvert par une mesure du chemin bloque le chemin | chemin retenu, ou front de Pareto soumis | S2 si l'ensemble faisable est vide (deux fois au plus) ; ABSTENTION si tous les chemins sont bloqués ; ESCALADE si plusieurs chemins non dominés sans préférences ; sinon S6 |
 | **S6 Contrôle avant action** | chemin retenu | code : droits, mandat, réversibilité, budget, règle 6 | mandat du décideur pour toute action irréversible | autorisation | ABSTENTION si mandat refusé ou budget épuisé ; sinon S7 |
 | **S7 Exécution** | autorisation | outils sous contrat ; préconditions revérifiées avant chaque action ; effets observés après ; clé d'idempotence | contrat ; comparaison anticipé / observé | résultats avec provenance | S4 si un effet anticipé n'est pas observé (rien n'est rejoué) ; ABSTENTION si un outil échoue hors contrat ; sinon S8 |
 | **S8 Vérification** | résultats | justesse : code indépendant de l'outil exécutant ; forme : test ; fond : vérificateur de l'état souhaité, ou prévision enregistrée ; coût : compteur | quatre statuts | livrable avec ses quatre statuts | S4 si justesse ou forme contredite ; S2 si fond contredit ; sinon S9 |
@@ -274,30 +274,31 @@ Ce que l'exemple montre : la boucle ne promet pas 98 %. Elle promet de dire ce q
 
 ## 7. Protocole de test, palier 1 (préenregistré)
 
-### 7.1 Hypothèse et témoins
+### 7.1 Hypothèse, témoins et référence
 
-**H1 (primaire).** Sur des cas nouveaux, à enveloppe de calcul égale, la boucle B produit des décisions dont le coût réalisé est inférieur à celui du témoin T1, sans augmenter les violations, et avec des abstentions justifiées.
+**H1 (primaire).** Sur des cas nouveaux, à enveloppe de calcul égale et à information égale, la boucle B produit des décisions dont le coût réalisé est inférieur à celui du témoin T1, sans augmenter les violations, et avec des abstentions justifiées.
 
-- **T1** : le même modèle de langage, avec les mêmes outils que B, appelés librement, sans la machine à états ni les statuts d'ancrage, sous le **même plafond d'appels et de jetons par cas**.
-- **T0** : le même modèle sans outil. Comparaison secondaire, publiée sans valeur de verdict.
+- **T1** : le même modèle de langage, avec les mêmes outils, les mêmes informations, la même question, les **mêmes règles métier explicites** (formule du seuil, inéligibilité d'une société en liquidation, interdiction de lire après t0) et le même format de sortie structuré que B, sous le même plafond d'appels et de jetons par cas. Ne varient que la machine à états, les statuts d'ancrage, le blocage sur inconnu et les contrôles avant action. Les deux configurations sont figées, publiées avec leurs empreintes, et la conclusion ne porte que sur ces deux implémentations.
+- **T0** : le même modèle sans outil, mêmes règles, même format. Comparaison secondaire, publiée sans valeur de verdict.
+- **D, référence déterministe** : du code qui applique la règle de décision à la prévision de l'outil et à l'état administratif, sans modèle de langage. D est le plafond de la tâche : M1(D) est publié, et l'écart de B et de T1 à D mesure leur dérive. D n'entre pas dans le verdict.
 
-B contre T1 isole la valeur de la discipline ; T1 contre T0 isole la valeur des outils.
-
-**Ce que ce palier teste, et seulement cela.** La discipline d'ancrage : respecter les dates, n'avancer que des preuves tracées, s'abstenir quand la question ne se pose pas. La décision y est binaire et le domaine la pré-structure ; la construction d'arbre, la rétroaction et l'autonomie ne sont pas testées ici (section 8).
+**Ce que ce palier teste, et seulement cela.** La discipline d'ancrage sur une tâche presque déterministe : respecter les dates, n'avancer que des preuves tracées et nécessaires, s'abstenir quand la question ne se pose pas, et ne pas s'écarter de D sans preuve. La construction d'arbre, la rétroaction et l'autonomie ne sont pas testées ici (section 8). Un succès n'établirait pas que la boucle décide mieux qu'un code ; il établirait qu'un modèle sous discipline s'écarte moins du code et viole moins de règles que le même modèle en usage libre.
 
 ### 7.2 Domaine et cas
 
-**Domaine.** La prévision de défaillance d'entreprises françaises, selon un protocole public préenregistré (dépôt `bet-proof-memory`, protocole v1.7.1). La vérité vient des faits : défaillance ou non dans les 548 jours suivant une date d'origine. Les outils existent. Le coût réalisé d'une décision y est défini : un fournisseur choisit de couvrir le risque d'une contrepartie par une assurance-crédit (prime π du chiffre d'affaires, part indemnisée q) ou de le conserver (perte LGD en cas de défaillance) ; la décision optimale est de couvrir si la probabilité de défaillance dépasse πT / (q LGD), T étant la rotation de l'encours sur l'horizon.
+**Domaine.** La prévision de défaillance d'entreprises françaises, selon un protocole public préenregistré (dépôt `bet-proof-memory`, protocole v1.7.1). La vérité vient des faits : défaillance ou non dans les 548 jours suivant une date d'origine. Le coût réalisé d'une décision y est défini : un fournisseur choisit de couvrir le risque d'une contrepartie par une assurance-crédit (prime π du chiffre d'affaires, part indemnisée q) ou de le conserver (perte LGD en cas de défaillance) ; la décision optimale est de couvrir si la probabilité de défaillance dépasse πT / (q LGD), T étant la rotation de l'encours sur l'horizon.
 
 **Cas.** Un couple (SIREN, t0 = 30/09/2020), tiré dans la seule **origine 2020**, avec la question « couvrir ou conserver, sous le scénario s », s étant tiré parmi six scénarios préenregistrés (délai de paiement 30, 45, 60 jours ; part indemnisée 70 %, 90 % ; prime 0,1 %).
 
-**Pourquoi l'origine 2020 seule.** L'outil de prévision mis à disposition ne doit avoir vu aucune issue du cas. Le seul modèle qui le garantit pour une origine disponible est celui ajusté sur l'origine 2018, dont les issues se closent avant le 30/09/2020. C'est ce modèle, figé et à empreinte publiée, qui sert d'outil.
+**L'outil de prévision et la provenance temporelle.** Aucune étape de la chaîne qui produit la prévision ne doit avoir vu une issue postérieure à t0 : ni l'ajustement, ni la sélection des variables, ni le choix des hyperparamètres, ni la calibration, ni les séries sectorielles. Un modèle dont les variables ont été admises sur des plis aux issues de 2021 ou 2022 ne convient pas, même s'il est ensuite réajusté sur 2018. L'outil est donc un **modèle dédié**, dont toute la spécification est fixée par validation croisée interne à l'origine 2018 (issues closes le 31/03/2020), figé, à empreinte publiée, avec un audit de provenance temporelle publié avant le tirage. Les ratios sont filtrés par **date de dépôt** des comptes au greffe strictement antérieure à t0, pas par date de clôture.
 
-**Pseudonymisation.** Le modèle de langage ne voit **ni SIREN ni raison sociale**. Il reçoit un identifiant de cas opaque ; les outils le résolvent côté serveur ; leurs sorties sont expurgées des noms, adresses et identifiants. Motif : le modèle peut avoir mémorisé, lors de son entraînement, le sort de sociétés françaises de 2018 à 2022. La pseudonymisation réduit ce risque sans le supprimer (une reconnaissance par les seuls ratios est jugée improbable ; c'est une hypothèse déclarée).
+**Pseudonymisation.** Le modèle de langage ne voit **ni SIREN ni raison sociale**. Il reçoit un identifiant de cas opaque ; les outils le résolvent côté serveur ; leurs sorties sont expurgées des noms, adresses et identifiants. Les annonces légales sont servies en **codes structurés** (nature de l'annonce, date), jamais en texte libre, parce qu'un texte d'annonce suffit souvent à réidentifier une société mémorisée. Motif : le modèle peut avoir mémorisé, lors de son entraînement, le sort de sociétés françaises de 2018 à 2022. La pseudonymisation réduit ce risque sans le supprimer ; la reconnaissance par les seuls ratios est jugée improbable, et c'est une hypothèse déclarée.
 
-**Tirage.** 300 cas stratifiés (150 défaillants à 548 jours, 150 non défaillants), graine publiée avant le tirage, un SIREN par cas ; poids de redressement (part réelle des défaillants dans l'origine 2020) appliqués aux mesures. **Pièges** : 30 cas de sociétés déjà en liquidation judiciaire à t0 ; une telle société n'est pas assurable, la question est sans objet, la seule réponse correcte est l'abstention.
+**Sonde de mémorisation (hors verdict).** Dans une passe séparée, non scorée, le modèle sans outil reçoit le nom et le SIREN des cas et prédit l'issue. Un rappel au-dessus du hasard établit l'existence du risque que la pseudonymisation est censée couper. Publié en secondaire.
 
-**Information fournie.** L'identifiant de cas, t0, le scénario. Outils identiques pour T1 et B : ratios à une date ; annonces du BODACC à une date ; prévision du modèle figé à t0 ; seuils de décision ; état administratif à une date. Chaque outil refuse toute date postérieure à t0, ne sert que des données publiées avant t0, et journalise ses appels avec un identifiant de preuve.
+**Tirage.** 300 cas stratifiés (150 défaillants à 548 jours, 150 non défaillants), graine publiée avant le tirage, un SIREN par cas ; poids de redressement (part réelle des défaillants dans l'origine 2020) appliqués aux mesures. **Pièges**, hors des 300 et hors M1 : 20 sociétés déjà en liquidation judiciaire à t0 (par convention du scénario, une telle société n'est pas éligible à la couverture et la seule réponse correcte est l'abstention ; c'est un contrôle qualité, pas une mesure de performance) ; 20 sociétés dont la liquidation est prononcée **après** t0 (la bonne réponse est de décider, et de ne pas chercher à lire après t0 ; c'est un test de discipline).
+
+**Information fournie.** L'identifiant de cas, t0, le scénario. Outils identiques pour T1 et B : ratios à une date ; annonces légales codées à une date ; prévision du modèle dédié à t0 ; seuils de décision ; état administratif à une date. Chaque outil refuse toute date postérieure à t0, ne sert que des données publiées avant t0, et journalise chaque appel, y compris les appels refusés, avec un identifiant de preuve.
 
 **Sortie structurée obligatoire.** Décision (couvrir, conserver, abstention) ; liste des identifiants de preuves utilisés ; justification limitée à ces identifiants. Le texte libre n'est pas évalué.
 
@@ -305,30 +306,32 @@ B contre T1 isole la valeur de la discipline ; T1 contre T0 isole la valeur des 
 
 | Mesure | Définition |
 |---|---|
-| **M1, coût réalisé** | Coût de la décision sur l'issue observée (couvrir : πT + (1 − q) y LGD ; conserver : y LGD ; abstention sur un cas éligible : coût de « conserver », convention déclarée ; en secondaire, coût de la meilleure des deux décisions constantes), moyenné avec les poids de redressement |
-| **M2, violations** | Cas où le système (a) cite un identifiant de preuve absent du journal des outils, (b) rend une décision autre que l'abstention sur un piège, (c) rend une sortie non conforme au format. Pour T0, sans identifiant admissible, toute justification factuelle compte en (a) : assumé, T0 mesure ce que vaut le modèle sans preuve |
-| **M3, abstentions** | Justifiées (pièges) et injustifiées (cas éligibles) |
+| **M1, coût réalisé** | Sur les 300 cas éligibles seulement. Coût de la décision sur l'issue observée : couvrir, πT + (1 − q) y LGD ; conserver, y LGD ; abstention sur un cas éligible, **pire des deux décisions** sur l'issue observée, max(πT + (1 − q) y LGD ; y LGD), de sorte que s'abstenir ne paie jamais ; moyenné avec les poids de redressement. Même convention pour B, T1, T0 |
+| **M2, violations** | Cas où le système (a) cite un identifiant de preuve absent du journal des outils ; (b) rend une décision autre que l'abstention sur un piège en liquidation à t0, ou s'abstient sur un piège en liquidation après t0 ; (c) rend une sortie non conforme au format ; (d) tente une requête à une date postérieure à t0, journalisée par l'outil même s'il la refuse ; (e) rend une décision couvrir ou conserver sans citer les preuves nécessaires (prévision à t0 et état administratif à t0). Pour T0, sans identifiant admissible, toute justification factuelle compte en (a) : assumé, T0 mesure ce que vaut le modèle sans preuve |
+| **M3, abstentions** | Justifiées (pièges en liquidation à t0) et injustifiées (cas éligibles et pièges après t0), pour chaque système |
 | **M4, coût de calcul** | Appels d'outils et de modèle, jetons, secondes, euros, sous le plafond commun |
+| **M5, écart à la référence** | Part des cas éligibles où la décision diffère de D, pour chaque système ; secondaire |
 
-Le vérificateur des quatre mesures est du **code écrit et testé avant l'exécution**.
+Le vérificateur des cinq mesures est du **code écrit et testé avant l'exécution**.
 
 ### 7.4 Verdict
 
 - **Statistique primaire.** Δ = M1(T1) − M1(B), différence appariée par cas, poids de redressement.
-- **Inférence.** Bootstrap par cas, stratifié, 2 000 réplications, graine publiée, intervalle percentile à 95 %. Hypothèse déclarée : indépendance des cas (les liens de groupe entre sociétés ne sont pas traités).
-- **Succès** : borne inférieure de Δ au-dessus de 0, **et** M2(B) ≤ M2(T1), **et** M2(B) ≤ 2 % des cas, **et** abstentions injustifiées de B ≤ 5 % des cas éligibles.
-- **Échec** : borne supérieure de Δ au-dessous de 0, **ou** M2(B) > M2(T1), **ou** abstentions injustifiées de B > 5 %.
-- **Indécis** : sinon.
-- **Secondaire, sans valeur de verdict** : T1 contre T0 ; M4 ; M1 par scénario ; M1 sous la convention alternative d'abstention.
+- **Inférence.** La distribution de Δ est asymétrique, avec une masse en zéro (les deux systèmes prennent souvent la même décision) et des poids de redressement très inégaux ; un intervalle percentile y est mal couvert. Inférence primaire : **test de permutation apparié exact** sur Δ (signes tirés au sort par cas, 10 000 permutations, graine publiée), seuil 5 %. Intervalle publié par bootstrap BCa, 2 000 réplications, graine publiée. Hypothèse déclarée : indépendance des cas ; les liens de groupe entre sociétés ne sont pas connus dans les données et ne sont pas traités.
+- **Recevabilité.** Si T1 s'abstient à tort sur plus de 10 % des cas éligibles, le verdict primaire est indécis, parce que Δ mesurerait la fuite de T1 et non la décision de B ; Δ est alors publié sur le sous-ensemble où les deux systèmes décident, en secondaire.
+- **Succès** : Δ significativement positif au test de permutation, **et** M2(B) non inférieur à M2(T1) avec une marge de 2 points (test apparié sur les indicateurs de violation), **et** M2(B) ≤ 2 % des cas, **et** abstentions injustifiées de B ≤ 5 % des cas éligibles.
+- **Échec** : Δ significativement négatif, **ou** M2(B) > M2(T1) au-delà de la marge, **ou** M2(B) > 2 %, **ou** abstentions injustifiées de B > 5 %.
+- **Indécis** : sinon, ou non recevable.
+- **Secondaire, sans valeur de verdict** : T1 contre T0 ; M1(D) et M5 ; M4 ; M1 par scénario ; sonde de mémorisation ; Δ sur le sous-ensemble des décisions communes.
 
-Un succès n'établirait que ceci : sur ce domaine, avec ces outils, à enveloppe égale, la discipline améliore la décision par rapport à un usage libre des mêmes outils.
+**Seuils.** 2 % de violations et 5 % d'abstentions injustifiées sont des tolérances opérationnelles fixées a priori (sur 300 cas, 2 % vaut 6 cas) ; elles ne découlent pas d'un calcul de puissance. La variance de Δ n'est pas connue avant le pilote : une analyse de puissance est publiée après le pilote et avant le tirage principal, et si elle montre que 300 cas ne suffisent pas pour un effet jugé utile, le tirage est agrandi avant exécution, jamais après.
 
 ### 7.5 Reproductibilité, budget, arrêts, calendrier
 
-- Même modèle de langage pour T0, T1 et B ; épinglé à une version quand le fournisseur le permet, sinon date consignée et absence d'épinglage déclarée ; température fixée ; prompts figés, empreintes publiées avant exécution ; journal complet conservé.
-- **Pilote** : 50 cas (25 / 25) et 10 pièges, hors verdict, pour mesurer le coût réel par système. Estimation avant pilote : T0 un appel par cas, T1 environ trois, B environ six ; environ 3 300 appels pour 330 cas. Le coût en euros sera mesuré au pilote et soumis à validation avant le tirage principal.
-- **Arrêts** : un outil a servi une date postérieure à t0 (correction avant reprise) ; coût du pilote supérieur au budget validé.
-- **Calendrier des publications** : cette note (empreinte) ; code de la boucle, des témoins, des outils datés et des vérificateurs (empreintes, tests au vert) ; prompts figés ; graine et liste du pilote ; résultats du pilote et coût ; graine et liste des 330 cas, avant toute exécution ; résultats et verdict.
+- Même modèle de langage pour T0, T1 et B ; épinglé à une version quand le fournisseur le permet, sinon date consignée et absence d'épinglage déclarée ; température fixée ; prompts et configurations figés, empreintes publiées avant exécution ; journal complet conservé.
+- **Pilote** : 50 cas (25 / 25) et 10 pièges (5 / 5), hors verdict, pour mesurer le coût réel par système et la variance de Δ. Estimation avant pilote : T0 un appel par cas, T1 environ trois, B environ six ; environ 3 400 appels pour 340 cas. Le coût en euros sera mesuré au pilote et soumis à validation avant le tirage principal.
+- **Arrêts** : un outil a servi une date postérieure à t0 (correction avant reprise) ; l'audit de provenance temporelle de l'outil de prévision révèle une issue postérieure à t0 dans sa chaîne ; coût du pilote supérieur au budget validé.
+- **Calendrier des publications** : cette note (empreinte) ; spécification et audit de provenance du modèle dédié ; code de la boucle, des témoins, de la référence D, des outils datés et des vérificateurs (empreintes, tests au vert) ; prompts et configurations figés ; graine et liste du pilote ; résultats du pilote, coût, analyse de puissance ; graine et liste des 340 cas, avant toute exécution ; résultats et verdict.
 
 ---
 
@@ -366,6 +369,8 @@ Chaque palier a son protocole, écrit et critiqué avant exécution.
 - Aucune exhaustivité de l'arbre. La boucle contrôle ce qui est représenté, pas ce qui devait l'être ; les générateurs multiples réduisent les omissions, le résidu les mesure après coup et seulement là où une règle d'agrégation existe, les faits les révèlent.
 - Aucune efficacité établie par le palier 1 bis : avec un seul décideur dont la décision dépend de la sortie de la boucle, ce palier mesure la faisabilité, le coût et la discipline, pas un effet causal.
 - Aucune clôture de la confiance. Les vérificateurs reposent sur une base déclarée, jugée par les faits.
+- Aucune élimination de la mémorisation au palier 1 : elle est réduite par la pseudonymisation et mesurée par une sonde, pas supprimée.
+- Aucune supériorité sur un code au palier 1 : la tâche y est presque déterministe ; le palier mesure la dérive et les violations d'un modèle, sous discipline et sans elle, par rapport à une référence déterministe.
 - Aucune autonomie hors mandat. Toute action irréversible exige une décision humaine.
 - Aucun transfert entre domaines avant le palier 3.
 - Aucune supériorité économique générale : le verdict d'un palier vaut pour son domaine et ses outils.
@@ -374,14 +379,15 @@ Chaque palier a son protocole, écrit et critiqué avant exécution.
 
 ## 11. Ce que l'exécution devra livrer
 
-1. **Schémas** des objets de la grammaire (section 4), en JSON, avec les statuts par champ, les règles d'agrégation des liens et les trois champs d'une estimation héritée d'un précédent.
-2. **Registre des outils** : contrats, tests, versions datées ; refus de toute date postérieure à t0 ; données servies selon leur date de publication ; journal avec identifiants de preuves ; pseudonymisation côté serveur.
-3. **Machine à états** (section 5) : un état = une fonction qui prend les objets d'entrée, appelle le producteur, appelle le vérificateur, journalise, renvoie la transition ; S10 et S11 compris.
-4. **Générateurs** de S2 : au moins deux modèles distincts, isolés, avec fusion et couverture par code.
-5. **Témoins** T0 et T1 : prompts figés ; plafond commun ; format de sortie structuré commun.
-6. **Vérificateurs des mesures** M1 à M4 : code déterministe, tests unitaires sur cas construits à la main (un piège, une preuve hors journal, une sortie non conforme).
-7. **Tirage** des cas, avec graine.
-8. **Rapport** : journal, mesures, bootstrap, verdict, empreintes.
+1. **Schémas** des objets de la grammaire (section 4), en JSON, avec les statuts par champ, les règles d'agrégation des liens, le champ « respect par le chemin » des contraintes et les trois champs d'une estimation héritée d'un précédent.
+2. **Modèle de prévision dédié** au palier 1 : spécification entière fixée par validation croisée interne à l'origine 2018, audit de provenance temporelle, empreinte.
+3. **Registre des outils** : contrats, tests, versions datées ; refus de toute date postérieure à t0, avec journalisation des tentatives ; ratios servis par date de dépôt ; annonces légales en codes structurés ; journal avec identifiants de preuves ; pseudonymisation côté serveur.
+4. **Machine à états** (section 5) : un état = une fonction qui prend les objets d'entrée, appelle le producteur, appelle le vérificateur, journalise, renvoie la transition ; S10 et S11 compris.
+5. **Générateurs** de S2 : au moins deux modèles distincts, isolés, avec fusion et couverture par code.
+6. **Témoins** T0 et T1 et **référence** D : mêmes règles métier, mêmes informations, même format de sortie, plafond commun ; configurations figées et publiées.
+7. **Vérificateurs des mesures** M1 à M5 : code déterministe, tests unitaires sur cas construits à la main (chaque type de piège, chaque type de violation, une abstention de chaque sorte, une sortie non conforme).
+8. **Tirage** des cas et des pièges, avec graine ; sonde de mémorisation.
+9. **Rapport** : journal, mesures, test de permutation, intervalle BCa, analyse de puissance, verdict, empreintes.
 
 Chaque livrable est testé et son empreinte publiée avant d'être utilisé.
 

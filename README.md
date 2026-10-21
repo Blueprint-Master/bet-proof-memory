@@ -32,6 +32,7 @@ Ce dépôt tient deux rôles :
 | `evaluation/references_v17.py` | Réévaluation des références sous le critère de la v1.7, sur les trois plis |
 | `mecanismes/cycle1.py` | Cycle 1 : calcul des 35 mécanismes candidats retenus |
 | `evaluation/cycle.py` | P7 : évaluation des candidats d'un cycle sur les trois plis, admission, assemblage des admis |
+| `evaluation/modele_dedie.py` | Boucle de supervision, palier 1 : modèle de prévision dédié, toute la chaîne interne à l'origine 2018, contrôles de provenance, prévisions au 30/09/2020 |
 | `cycles/` | Cahiers, propositions brutes, vérifications et listes figées des cycles |
 | `tests/` | Tests, sans accès réseau extérieur |
 

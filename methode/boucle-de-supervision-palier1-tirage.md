@@ -49,3 +49,11 @@ Les contrôles bloquants T7 sont passés.
 **Scénarios.** La répartition tirée s'écarte de l'uniforme sans que ce soit significatif (khi-deux 7,4 pour 5 degrés de liberté, p ≈ 0,19). Le tirage n'est pas refait.
 
 Empreintes des cinq fichiers au registre ; aucun n'est versé au dépôt.
+
+## 6. Tirage principal (décision du 22/10/2026, 18 h 30)
+
+Après le pilote (T1 = B = D, puissance non calculable), le décideur a validé le lancement du principal à l'effectif préenregistré, avec la mention que l'effet attendu est peut-être nul (règle de la section 3 du document de puissance).
+
+- **Graine du tirage principal : 729277263**, tirée le 22/10/2026 avant le tirage. Effectifs : 150 défaillants, 150 non défaillants, 20 pièges avant t0, 20 pièges après t0 ; SIREN du pilote exclus.
+- **Graine de l'analyse du principal (permutation, BCa) : 371935227**, tirée le même jour, avant toute exécution.
+- **Plafond total d'appels de modèle : 2 000** (estimation : environ 1 700 au rythme du pilote ; pire cas théorique 4 420), soit une dépense bornée à environ 12 $ au tarif indicatif.

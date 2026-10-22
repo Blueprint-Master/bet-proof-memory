@@ -30,7 +30,8 @@ def _post(url: str, entetes: dict, corps: dict, delai: int = 120) -> dict:
                 return json.loads(r.read().decode())
         except urllib.error.HTTPError as e:
             if attente is None or not (e.code == 429 or e.code >= 500):
-                raise
+                corps_erreur = e.read().decode(errors="replace")[:1000]
+                raise RuntimeError(f"HTTP {e.code} sur {url} : {corps_erreur}") from None
         except (urllib.error.URLError, TimeoutError):
             if attente is None:
                 raise

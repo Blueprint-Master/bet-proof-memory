@@ -38,6 +38,7 @@ Ce dépôt tient deux rôles :
 | `palier1/regles.py` | Boucle de supervision, palier 1 : règles métier communes, format de sortie et son contrôle, coût réalisé |
 | `palier1/reference.py` | Boucle de supervision, palier 1 : référence déterministe D (état, prévision, seuil, sans modèle de langage) |
 | `palier1/verificateurs.py` | Boucle de supervision, palier 1 : vérificateurs M1 à M5, test de permutation, intervalle BCa, non-infériorité de M2, verdict |
+| `palier1/tirer.py` | Boucle de supervision, palier 1 : tirage des cas et des pièges avec graine publiée, extraction et pseudonymisation, contrôles bloquants |
 | `cycles/` | Cahiers, propositions brutes, vérifications et listes figées des cycles |
 | `tests/` | Tests, sans accès réseau extérieur |
 

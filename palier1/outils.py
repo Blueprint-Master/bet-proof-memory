@@ -131,10 +131,8 @@ class Registre:
             fin = dt.date.fromisoformat(p["fin"]) if p["fin"] else None
             if (deb is None or deb <= d) and (fin is None or d <= fin):
                 per = p
-        etat = None
-        for v in sorted(x["procedures"], key=lambda v: v["parution"]):
-            if dt.date.fromisoformat(v["parution"]) < d and v["nature"] in ETAT_APRES:
-                etat = ETAT_APRES[v["nature"]]
+        etat = etat_procedure((v["parution"], v["jugement"] or v["parution"], v["nature"])
+                              for v in x["procedures"] if dt.date.fromisoformat(v["parution"]) < d)
         cr = dt.date.fromisoformat(x["creation"]) if x["creation"] else None
         return {"categorie_juridique": per["categorie_juridique"] if per else None,
                 "naf": per["naf"] if per else None,
@@ -156,6 +154,19 @@ class Registre:
         T = HORIZON / s["D"]
         return {"scenario": scenario, "pi": PI, "D": s["D"], "q": s["q"], "lgd": self.lgd, "T": round(T, 6),
                 "p_t": round(PI * T / (s["q"] * self.lgd), 8)}
+
+
+def etat_procedure(triplets) -> str:
+    """État de procédure après une suite de (parution, jugement, nature), triée comme en P1, règle de P1 (ingestion/construire.py) :
+    un plan n'arrête qu'une sauvegarde ou un redressement (un plan publié après une liquidation
+    ne la fait pas disparaître)."""
+    etat = None
+    for _p, _j, n in sorted(triplets):
+        if n in ETAT_APRES:
+            if n == "PLAN" and etat not in ("RJ", "SAUV", "PLAN"):
+                continue
+            etat = ETAT_APRES[n]
+    return etat
 
 
 class Refus(Exception):

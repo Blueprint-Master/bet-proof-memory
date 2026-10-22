@@ -39,7 +39,7 @@ La note gelée (`boucle-de-supervision.md`, sections 7.1 à 7.4) définit les me
 
 Ce n'est pas un défaut à corriger : c'est ce que dit la note, rendu calculable. La prédiction enregistrée (`boucle-de-supervision-prediction-palier-1.md`) a été faite sans ce chiffre ; elle n'est pas modifiée, mais le risque d'issue « indécis » par ce canal est plus élevé qu'il n'y paraissait. Il sera rappelé dans l'analyse de puissance après le pilote.
 
-## 4. Points encore ouverts, à trancher avant le pilote
+## 4. Points tranchés le 22/10/2026
 
-1. **Verdict secondaire sous LGD 0,70.** Deux lectures : refaire tourner les systèmes avec des seuils calculés sous 0,70 (double le coût en appels), ou garder leurs décisions et ne recalculer que les coûts (mesure la sensibilité du coût, pas des décisions). Proposition : D est refaite sous 0,70 (gratuit), B et T1 sont recalculés à décisions constantes, et la limite est déclarée.
-2. **Plafond commun d'appels et de jetons par cas** (M4). Fixé avec les configurations de T1 et B ; le vérificateur additionne déjà les coûts et les publiera contre ce plafond.
+1. **Verdict secondaire sous LGD 0,70** : D est refaite sous 0,70 (gratuit) ; B et T1 gardent leurs décisions et seuls leurs coûts sont recalculés. Limite déclarée : cette lecture mesure la sensibilité du coût, pas celle des décisions.
+2. **Plafond commun d'appels et de jetons par cas** (M4) : fixé avec les configurations de T1 et B, publié avec elles avant le pilote ; le vérificateur additionne déjà les coûts.

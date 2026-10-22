@@ -57,3 +57,9 @@ Le premier appel a été refusé par l'interface (erreur 400, sans facturation).
 - **`mistral-large-4-0` est un modèle à raisonnement** : sa réponse contient des blocs « thinking » suivis d'un bloc « text », et les jetons de raisonnement sont facturés comme jetons de sortie (71 sur 75 dans l'essai). Seul le bloc « text » est lu comme réponse ; le raisonnement n'est ni renvoyé au modèle dans les tours suivants ni conservé. Le nombre de jetons de raisonnement et les réponses tronquées sont relevés par exécution. La limite de sortie par appel passe de 1 500 à 4 000 jetons pour ne pas tronquer le raisonnement ; le plafond de 40 000 jetons par cas est inchangé et commun à T1 et B.
 
 Conséquence sur le coût : la sortie, plus chère, sera plus volumineuse que prévu. Le plafond total de 600 appels du pilote borne la dépense ; le coût réel sera mesuré et publié avant le principal.
+
+## 6. Essai à blanc (22/10/2026) et graine d'analyse du pilote
+
+Essai de 10 appels : 5 exécutions sur deux cas, toutes conformes ; aucune requête bloquée, aucune réponse tronquée ; modèle servi : `mistral-large-4-0` à chaque appel. Arrêt correct avant le plafond (le cas suivant de T1 pouvait demander 6 appels). Aucun défaut de code : l'essai est conservé dans le pilote. Le raisonnement domine la consommation : 1 150 à 2 216 jetons de raisonnement par appel, soit environ 5 000 jetons de sortie et 3 000 d'entrée par cas pour les trois systèmes.
+
+**Graine de l'analyse du pilote (permutation, BCa) : 816420796**, tirée le 22/10/2026 avant la fin du pilote.

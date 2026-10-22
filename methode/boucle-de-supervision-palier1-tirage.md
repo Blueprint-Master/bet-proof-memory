@@ -29,3 +29,23 @@ En écrivant le tirage, un écart a été trouvé entre l'outil `etat` et la rè
 
 1. **Verdict secondaire sous LGD 0,70** : D est refaite sous 0,70 ; B et T1 gardent leurs décisions et seuls leurs coûts sont recalculés (`verificateurs.fiches` avec `lgd = 0,70`). Limite déclarée : cette lecture mesure la sensibilité du coût, pas celle des décisions.
 2. **Plafond commun d'appels et de jetons par cas** : fixé avec les configurations de T1 et B, publié avec elles avant le pilote.
+
+## 5. Exécution du tirage du pilote (22/10/2026, bpm-prod)
+
+Les contrôles bloquants T7 sont passés.
+
+| Grandeur | Valeur |
+|---|---|
+| Population éligible de l'origine 2020 (avec prévision) | 807 183 cas, dont 8 880 défaillants (1,10 %) |
+| Candidats pièges avant t0 (liquidation en cours) | 9 544 |
+| Candidats pièges après t0 (liquidation dans les 548 jours) | 6 552, soit 74 % des défaillants |
+| Tirés | 25 défaillants, 25 non défaillants, 5 pièges avant, 5 pièges après |
+| Prévisions servies | 55 (les 5 pièges avant n'en ont pas, comme attendu) |
+| Poids de redressement | défaillant 0,0220 ; non défaillant 1,9780 |
+| Scénarios | S1 16, S2 11, S3 4, S4 10, S5 9, S6 10 |
+
+**Effectif utile.** Avec des poids aussi inégaux, la moyenne pondérée de Δ repose surtout sur les non-défaillants : sur 150 / 150, l'effectif utile au sens de Kish, (Σw)² / Σw², vaut environ 153 cas et non 300. L'analyse de puissance après le pilote en tiendra compte.
+
+**Scénarios.** La répartition tirée s'écarte de l'uniforme sans que ce soit significatif (khi-deux 7,4 pour 5 degrés de liberté, p ≈ 0,19). Le tirage n'est pas refait.
+
+Empreintes des cinq fichiers au registre ; aucun n'est versé au dépôt.

@@ -33,6 +33,8 @@ Ce dépôt tient deux rôles :
 | `mecanismes/cycle1.py` | Cycle 1 : calcul des 35 mécanismes candidats retenus |
 | `evaluation/cycle.py` | P7 : évaluation des candidats d'un cycle sur les trois plis, admission, assemblage des admis |
 | `evaluation/modele_dedie.py` | Boucle de supervision, palier 1 : modèle de prévision dédié, toute la chaîne interne à l'origine 2018, contrôles de provenance, prévisions au 30/09/2020 |
+| `palier1/extraire_cas.py` | Boucle de supervision, palier 1 : dossiers de cas limités à l'information parue avant t0, pseudonymisés (correspondance et clé à part) |
+| `palier1/outils.py` | Boucle de supervision, palier 1 : outils datés (ratios, annonces codées, état administratif, prévision, seuils), refus après t0, journal avec preuves |
 | `cycles/` | Cahiers, propositions brutes, vérifications et listes figées des cycles |
 | `tests/` | Tests, sans accès réseau extérieur |
 

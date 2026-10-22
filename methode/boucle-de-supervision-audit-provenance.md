@@ -61,7 +61,29 @@ Cet audit couvre uniquement l'outil de prévision. Les autres outils du palier 1
 - l'état administratif ;
 - les seuils.
 
-## 4. Exécution
+## 4. Outils servis aux systèmes (ajout du 22/10/2026)
+
+Code audité : `palier1/extraire_cas.py` (extraction des dossiers, côté serveur) et `palier1/outils.py` (registre des outils). Tests : `tests/test_palier1_outils.py`.
+
+| N° | Maillon | Règle | Statut | Preuve |
+|---|---|---|---|---|
+| O1 | Extraction des dossiers | seule l'information parue strictement avant t0 est copiée : bilans (avis de dépôt), dépôts, jugements, radiations, dissolutions, fusions | Par construction | `extraire()`, filtres `p < t0` ; test « toutes les dates avant t0 » |
+| O2 | Périodes Sirene | une période débutant après t0 est écartée ; une date de fin postérieure à t0 est effacée | Par construction | `extraire()` ; test « fin de période Sirene postérieure effacée » |
+| O3 | Outils | toute date postérieure à t0, absente ou mal formée est refusée, et le refus est journalisé | Par construction | `Registre._date` ; test « refus après t0 journalisé » |
+| O4 | Prévision | servie au seul t0, depuis le fichier du modèle dédié | Par construction | `_prevision` ; test « prévision au seul t0 » |
+| O5 | Annonces | servies en codes (type, nature classée, date de parution, clôture), jamais en texte libre | Par construction | `_annonces` ; test « annonces codées » |
+| O6 | Pseudonymisation | identifiant opaque par HMAC-SHA256 sous une clé aléatoire ; correspondance et clé dans des fichiers séparés (droits 600), jamais lus par les outils ; aucun SIREN dans les dossiers ni dans les réponses | Par construction | `pseudonymiser()` ; tests « pseudonymisation » et « aucun identifiant dans les réponses » |
+| O7 | Journal | chaque appel, refus compris, porte un identifiant de preuve déterministe | Par construction | `appeler()` ; test « preuve déterministe » |
+| O8 | Valeurs des ratios | ratios extraits en 2026, donc éventuellement corrigés par un dépôt rectificatif postérieur à t0 | **Résiduel** | voir R7 |
+| O9 | Quasi-identifiants | NAF, catégorie juridique, âge et ratios exacts peuvent permettre à un modèle qui a mémorisé des sociétés d'en reconnaître une | **Résiduel** | voir R8 |
+
+**R7. Dépôts rectificatifs.** Si une société a redéposé des comptes corrigés après t0, la source de 2026 peut porter les valeurs corrigées sous la même clôture. Sens probable : faible. Le même dossier est servi à tous les systèmes.
+
+**R8. Réidentification par quasi-identifiants.** Le total de bilan n'est servi qu'en ordre de grandeur (log10 arrondi au dixième), mais les ratios sont exacts. La sonde de mémorisation (note, section 7.2) mesure ce risque au lieu de le supposer.
+
+**Règle d'usage du journal.** Chaque exécution d'un système sur un cas utilise sa propre instance du registre et son propre fichier de journal. L'identifiant de preuve ne contient pas l'identité du système, ce qui est voulu : une même question rend la même preuve. Le vérificateur de M2 contrôle donc une preuve citée contre le journal de l'exécution qui la cite, jamais contre un journal partagé.
+
+## 5. Exécution
 
 Sur bpm-prod, depuis le dossier du dépôt :
 

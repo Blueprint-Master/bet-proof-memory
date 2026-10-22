@@ -35,6 +35,9 @@ Ce dépôt tient deux rôles :
 | `evaluation/modele_dedie.py` | Boucle de supervision, palier 1 : modèle de prévision dédié, toute la chaîne interne à l'origine 2018, contrôles de provenance, prévisions au 30/09/2020 |
 | `palier1/extraire_cas.py` | Boucle de supervision, palier 1 : dossiers de cas limités à l'information parue avant t0, pseudonymisés (correspondance et clé à part) |
 | `palier1/outils.py` | Boucle de supervision, palier 1 : outils datés (ratios, annonces codées, état administratif, prévision, seuils), refus après t0, journal avec preuves |
+| `palier1/regles.py` | Boucle de supervision, palier 1 : règles métier communes, format de sortie et son contrôle, coût réalisé |
+| `palier1/reference.py` | Boucle de supervision, palier 1 : référence déterministe D (état, prévision, seuil, sans modèle de langage) |
+| `palier1/verificateurs.py` | Boucle de supervision, palier 1 : vérificateurs M1 à M5, test de permutation, intervalle BCa, non-infériorité de M2, verdict |
 | `cycles/` | Cahiers, propositions brutes, vérifications et listes figées des cycles |
 | `tests/` | Tests, sans accès réseau extérieur |
 

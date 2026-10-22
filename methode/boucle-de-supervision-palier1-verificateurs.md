@@ -43,3 +43,9 @@ Ce n'est pas un défaut à corriger : c'est ce que dit la note, rendu calculable
 
 1. **Verdict secondaire sous LGD 0,70** : D est refaite sous 0,70 (gratuit) ; B et T1 gardent leurs décisions et seuls leurs coûts sont recalculés. Limite déclarée : cette lecture mesure la sensibilité du coût, pas celle des décisions.
 2. **Plafond commun d'appels et de jetons par cas** (M4) : fixé avec les configurations de T1 et B, publié avec elles avant le pilote ; le vérificateur additionne déjà les coûts.
+
+## 5. Analyse prématurée du pilote (22/10/2026, 17 h) et garde ajoutée
+
+Le rapport a été calculé quelques secondes après le lancement du pilote, sur un fichier d'exécutions qui ne contenait encore que l'essai à blanc (empreinte ec8fdf79… ; rapport 06c3af90…). Conformément à I7, chaque exécution absente a été comptée comme une sortie absente : 58 à 59 violations (c) par système et un statut « échec » qui ne mesure que l'absence d'exécution. **Ce rapport est nul et non avenu** ; il est consigné au registre pour la traçabilité, et il n'a rien révélé des issues individuelles (seule la composition 25 / 25, connue par construction, entre dans M1 quand toutes les sorties sont absentes).
+
+Garde ajoutée : `verificateurs.py` refuse désormais de produire un rapport tant qu'une exécution manque, sauf option explicite `--accepter-manquantes`, réservée à l'analyse finale d'une exécution interrompue. La règle I7 est inchangée.

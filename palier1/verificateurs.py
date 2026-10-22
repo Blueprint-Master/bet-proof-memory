@@ -275,6 +275,11 @@ def verdict(fs: dict, graine: int) -> dict:
     return out
 
 
+def manquantes_par_systeme(cas: dict, executions: list, systemes: list) -> dict:
+    vues = {(e["systeme"], e["cas"]) for e in executions}
+    return {s: sum((s, k) not in vues for k in cas) for s in systemes}
+
+
 def main(argv=None) -> int:
     pa = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     pa.add_argument("--cas", required=True, help="JSON {identifiant: description du cas}")
@@ -282,12 +287,20 @@ def main(argv=None) -> int:
     pa.add_argument("--lgd", type=float, required=True)
     pa.add_argument("--graine", type=int, required=True)
     pa.add_argument("--systemes", default="B,T1,T0,D")
+    pa.add_argument("--accepter-manquantes", action="store_true",
+                    help="calculer même si des exécutions manquent (elles valent alors des sorties absentes, I7)")
     args = pa.parse_args(argv)
     with open(args.cas, encoding="utf-8") as f:
         cas = json.load(f)
     with open(args.executions, encoding="utf-8") as f:
         exe = [json.loads(l) for l in f if l.strip()]
-    fs = fiches(cas, exe, args.lgd, args.systemes.split(","))
+    systemes = args.systemes.split(",")
+    manquantes = manquantes_par_systeme(cas, exe, systemes)
+    if any(manquantes.values()) and not args.accepter_manquantes:
+        print(f"exécutions manquantes {manquantes} : exécution en cours ou interrompue ; aucun rapport produit "
+              "(relancer l'exécution, ou --accepter-manquantes pour l'analyse finale)", file=sys.stderr)
+        return 2
+    fs = fiches(cas, exe, args.lgd, systemes)
     json.dump(verdict(fs, args.graine), sys.stdout, ensure_ascii=False, indent=1, default=float)
     print()
     return 0

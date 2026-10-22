@@ -243,6 +243,23 @@ class TestMesuresEtVerdict(unittest.TestCase):
         self.assertEqual(ms["D"]["M2"]["cas"], 0)
         self.assertEqual(ms["D"]["M3"]["justifiees"], 4)
 
+    def test_rapport_refuse_si_executions_manquantes(self):
+        import contextlib
+        import io
+        import tempfile
+
+        dossier_tmp = tempfile.mkdtemp()
+        c, x = os.path.join(dossier_tmp, "cas.json"), os.path.join(dossier_tmp, "exe.jsonl")
+        with open(c, "w") as f:
+            json.dump(self.cas, f)
+        with open(x, "w") as f:
+            f.writelines(json.dumps(e) + "\n" for e in self.D[:5])
+        args = ["--cas", c, "--executions", x, "--lgd", str(LGD), "--graine", "1", "--systemes", "D"]
+        with contextlib.redirect_stderr(io.StringIO()) as err:
+            self.assertEqual(vf.main(args), 2)
+        self.assertIn("manquantes", err.getvalue())
+        self.assertEqual(vf.manquantes_par_systeme(self.cas, self.D[:5], ["D"])["D"], len(self.cas) - 5)
+
     def test_manquante_et_doublon(self):
         fs = vf.fiches(self.cas, self.D[1:], LGD, ["D"])
         k = self.D[0]["cas"]

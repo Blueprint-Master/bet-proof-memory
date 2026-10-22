@@ -145,3 +145,6 @@ Chaque ligne est publiée par un commit daté AVANT tout accès aux issues conce
 | 2026-10-22 | palier1/puissance.py | d74b0666aeaf6bb9b85ef4e23a0f2b844f2a65c30a672641938c14698828e597 | Analyse de puissance : variances par strate, effectif plug-in et majoré (borne khi-deux 90 %), δ utile proposé 0,001 |
 | 2026-10-22 | tests/test_palier1_puissance.py | 0f1a1a678eff8de9b81b46e65fc1ef77c80d6a9b00335cf1012c7bbff6011ee5 | Tests de l'analyse de puissance |
 | 2026-10-22 | methode/boucle-de-supervision-palier1-puissance.md | 0bc536218cd27787e1669bdfe448d79153c1ef62d5798cc375f75154d1c4e9fd | Méthode, effet utile proposé (δ = 0,001, à valider avant lecture du pilote), règles de décision fixées avant le pilote |
+| 2026-10-22 | palier1/puissance.py | ee90d735b89a4c5368d50c85bd244a436a9a7b4a52173fd5fbaa4fbdae4f6018 | δ = 0,001 validé avant lecture du pilote ; commande d'analyse (refus si exécutions manquantes) |
+| 2026-10-22 | tests/test_palier1_puissance.py | cd15a4f4b66c460379cdc4dfca154e72bf2abaa1cbcc19093da31b9a178353ae | Test de la part des défaillants déduite des poids |
+| 2026-10-22 | methode/boucle-de-supervision-palier1-puissance.md | 6130be6ba2d185d544d76e501a95338861257eb2a06fd6bcef4f166a5aa82851 | δ = 0,001 validé par le décideur le 22/10/2026 à 17 h 24, avant lecture du pilote |

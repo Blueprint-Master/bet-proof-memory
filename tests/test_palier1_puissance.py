@@ -36,6 +36,11 @@ class TestPuissance(unittest.TestCase):
         s0 = r["strates"][0]["variance"]
         self.assertEqual(r["n_plug_in"], math.ceil(pu.effectif(0.011, 0.0, s0)))
 
+    def test_part_defaillants(self):
+        cas = {"a": {"type": "eligible", "y": 1, "w": 0.022}, "b": {"type": "eligible", "y": 0, "w": 1.978},
+               "c": {"type": "piege_avant"}}
+        self.assertAlmostEqual(pu.part_defaillants(cas), 0.011)
+
 
 if __name__ == "__main__":
     unittest.main()

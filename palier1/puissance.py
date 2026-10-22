@@ -11,11 +11,16 @@ supérieure à 90 % (khi-deux, ddl = n_strate − 1). Une strate sans aucune dif
 d'estimer sa variance : elle est signalée, et la décision revient au décideur.
 """
 
+import argparse
+import json
 import math
+import sys
 
 from scipy.stats import chi2, norm
 
-DELTA_UTILE = 0.001  # proposition, à valider avant lecture du pilote : voir le document de puissance
+import verificateurs as vf
+
+DELTA_UTILE = 0.001  # validé par le décideur le 22/10/2026, avant lecture du pilote
 
 
 def variances_par_strate(fiches_t1: dict, fiches_b: dict, cas: dict) -> dict:
@@ -50,3 +55,34 @@ def analyser(fiches_t1: dict, fiches_b: dict, cas: dict, p: float, delta: float 
     res["conclusion"] = ("300 cas suffisent" if res["n_majore"] <= 300 else
                          f"300 cas ne suffisent pas : {res['n_majore']} requis (borne majorée)")
     return res
+
+
+def part_defaillants(cas: dict) -> float:
+    """p dans l'origine, déduit des poids : w1 = p / part des défaillants dans l'échantillon."""
+    el = [c for c in cas.values() if c["type"] == "eligible"]
+    n1 = sum(c["y"] for c in el)
+    w1 = next(c["w"] for c in el if c["y"] == 1)
+    return w1 * n1 / len(el)
+
+
+def main(argv=None) -> int:
+    pa = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    pa.add_argument("--cas", required=True)
+    pa.add_argument("--executions", required=True)
+    pa.add_argument("--lgd", type=float, required=True)
+    a = pa.parse_args(argv)
+    with open(a.cas, encoding="utf-8") as f:
+        cas = json.load(f)
+    with open(a.executions, encoding="utf-8") as f:
+        exe = [e for e in map(json.loads, filter(str.strip, f)) if e["systeme"] in ("T1", "B")]
+    if any(vf.manquantes_par_systeme(cas, exe, ["T1", "B"]).values()):
+        print("exécutions manquantes : analyse refusée", file=sys.stderr)
+        return 2
+    fs = vf.fiches(cas, exe, a.lgd, ["T1", "B"])
+    json.dump(analyser(fs["T1"], fs["B"], cas, part_defaillants(cas)), sys.stdout, ensure_ascii=False, indent=1)
+    print()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

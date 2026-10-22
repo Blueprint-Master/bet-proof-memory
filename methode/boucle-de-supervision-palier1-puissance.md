@@ -12,7 +12,7 @@ La statistique primaire est la moyenne pondérée de Δ = coût(T1) − coût(B)
 
 La note demande d'agrandir le tirage si 300 cas ne suffisent pas « pour un effet jugé utile », sans fixer cet effet. Il doit l'être avant que les résultats du pilote soient lus, sinon il serait choisi en connaissant la variance.
 
-**Proposition : δ = 0,001 par unité d'encours**, soit l'équivalent du taux de prime π (0,1 %) : la discipline vaut la peine si elle économise au moins ce que coûte l'assurance elle-même, rapporté à l'encours. Pour mémoire, une couverture inutile sur un non-défaillant coûte πT, de 0,009 à 0,018 selon le délai de paiement.
+**δ = 0,001 par unité d'encours, validé par le décideur le 22/10/2026 à 17 h 24, avant toute lecture des résultats du pilote**, soit l'équivalent du taux de prime π (0,1 %) : la discipline vaut la peine si elle économise au moins ce que coûte l'assurance elle-même, rapporté à l'encours. Pour mémoire, une couverture inutile sur un non-défaillant coûte πT, de 0,009 à 0,018 selon le délai de paiement.
 
 **Sensibilité, sur un exemple fictif** (pas une donnée du pilote) : si T1 s'écartait de B sur 3 non-défaillants sur 25, chaque fois d'une couverture inutile de 0,018, et jamais sur les défaillants, il faudrait environ 550 cas pour δ = 0,001, et environ 140 pour δ = 0,002. Le choix de δ pèse donc autant que la variance observée.
 

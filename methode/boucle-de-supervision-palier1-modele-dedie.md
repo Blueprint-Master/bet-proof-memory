@@ -91,6 +91,34 @@ Si H-d est vraie, G2 et C8 ne désignent pas la même sous-population en 2018 et
 
 **Test de H-d.** Comparer, par origine, l'ancienneté du bilan connu à t0, et la part de G2 selon cette ancienneté.
 
+**Test de H-d, 22/10/2026 (faits).** Répartition des cas selon l'ancienneté du bilan connu à t0 (écart entre t0 et sa date de clôture), et part de G2 dans chaque tranche :
+
+| Origine | 1 an au plus : part (G2) | 1 à 2 ans : part (G2) | Plus de 2 ans : part (G2) | Clôture la plus ancienne ; 10e centile |
+|---|---|---|---|---|
+| 2018 | 36,6 % (0 %) | 52,5 % (9,6 %) | 10,9 % (56,2 %) | 2014 ; 2016 |
+| 2019 | 30,8 % (0 %) | 40,1 % (9,4 %) | 29,1 % (65,9 %) | 2014 ; 2016 |
+| 2020 | 16,7 % (0 %) | 39,5 % (7,3 %) | 43,8 % (68,1 %) | 2014 ; 2016 |
+
+**Conclusions.**
+- **La hausse de G2 est surtout un effet de composition.** Dans chaque tranche d'ancienneté, la part de G2 varie peu. Ce qui change, c'est le poids de la tranche « plus de 2 ans », qui passe de 10,9 % à 43,8 % des cas. G2 et C8 mesurent donc surtout l'ancienneté du dernier bilan connu.
+- **H-d est soutenue, mais sous une forme atténuée.** Il n'y a pas de coupure nette à 2016 : des clôtures de 2014 existent à toutes les origines. La source s'épaissit progressivement, et la population de 2018 contient beaucoup moins de sociétés au dernier bilan ancien que celle de 2020.
+- **Une seconde cause probable s'ajoute en 2020** (hypothèse). La part des bilans d'un an au plus tombe de 30,8 % à 16,7 % entre 2019 et 2020. C'est cohérent avec un dépôt plus tardif des comptes 2019, mais le texte qui l'aurait permis n'a pas été lu.
+
+**Conséquence pour le palier 1.** Les coefficients de G2 et C8 ont été appris en 2018, sur un groupe rare (11 % des cas au dernier bilan ancien). Ils s'appliquent en 2020 à un groupe quatre fois plus large et probablement moins sélectionné. L'outil risque donc d'être moins bien calibré sur 2020.
+
+L'outil n'est pas modifié, pour trois raisons :
+- il suit la spécification gelée ;
+- il est le même pour B, T1 et D ;
+- le palier 1 mesure la discipline, pas la qualité de l'outil.
+
+Le corriger en regardant les issues de 2020 serait une fuite. Le corriger sur la seule distribution des variables à t0 serait permis, mais ouvrirait un choix de conception après coup : il est renvoyé au juge du réel.
+
+**Conséquence pour le juge du réel.** La composition de la population par ancienneté du bilan glisse fortement d'une origine à l'autre. Ce glissement vient de la densité de la source, pas de l'économie. Il touche tous les plis qui testent 2019 et 2020, donc les conclusions du premier cycle sur les variables liées au dépôt des comptes.
+
+Deux options pour le cycle 2, à décider par amendement du protocole :
+- ajouter l'ancienneté du bilan connu à t0 comme variable ;
+- ou stratifier l'évaluation par tranche d'ancienneté.
+
 ## 4. Suite
 
 1. Extraire du rapport les paramètres du modèle final et la moyenne des prévisions 2020, puis les inscrire ici.

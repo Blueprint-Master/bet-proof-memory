@@ -5,7 +5,7 @@
 set -euo pipefail
 B=~/bpm-donnees
 PY=.venv/bin/python3
-: "${MISTRAL_API_KEY:?clé absente : la charger d'abord}"
+[ -n "${MISTRAL_API_KEY:-}" ] || { echo "clé absente : la charger avant le lancement"; exit 1; }
 [ -z "$(ls $B/palier1-principal-dossiers-*.json 2>/dev/null)" ] || { echo "un tirage principal existe déjà : arrêt"; exit 1; }
 $PY palier1/tirer.py --cas $B/cas-dev.parquet --prevision $B/prevision-dediee-2020-20261022-062330.parquet \
     --graine 729277263 --phase principal --exclure $B/palier1-pilote-tirage-20261022-141456.json \

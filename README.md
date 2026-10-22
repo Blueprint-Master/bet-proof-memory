@@ -39,6 +39,9 @@ Ce dépôt tient deux rôles :
 | `palier1/reference.py` | Boucle de supervision, palier 1 : référence déterministe D (état, prévision, seuil, sans modèle de langage) |
 | `palier1/verificateurs.py` | Boucle de supervision, palier 1 : vérificateurs M1 à M5, test de permutation, intervalle BCa, non-infériorité de M2, verdict |
 | `palier1/tirer.py` | Boucle de supervision, palier 1 : tirage des cas et des pièges avec graine publiée, extraction et pseudonymisation, contrôles bloquants |
+| `palier1/systemes.py` | Boucle de supervision, palier 1 : configurations de T0, T1 et machine à états de B (protocole d'échange commun, plafond par cas) |
+| `palier1/modeles.py` | Boucle de supervision, palier 1 : adaptateurs de modèles (interface compatible OpenAI, interface Anthropic), température 0 |
+| `palier1/executer.py` | Boucle de supervision, palier 1 : exécution de D, T0, T1, B avec reprise et plafond total d'appels |
 | `cycles/` | Cahiers, propositions brutes, vérifications et listes figées des cycles |
 | `tests/` | Tests, sans accès réseau extérieur |
 

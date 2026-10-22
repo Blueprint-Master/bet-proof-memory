@@ -142,3 +142,6 @@ Chaque ligne est publiée par un commit daté AVANT tout accès aux issues conce
 | 2026-10-22 | palier1/verificateurs.py | 9f05a9d9b7e26a2ad7327337b5470b01f870459f4fad511f8e8608b045147698 | Garde : aucun rapport tant qu'une exécution manque, sauf --accepter-manquantes |
 | 2026-10-22 | tests/test_palier1_verificateurs.py | c1e3f1c8d5422c4f7a0931cee4e4ab8b55ab07a1fd21cdb5f584ebfb1d03f3ae | Test de la garde des exécutions manquantes |
 | 2026-10-22 | methode/boucle-de-supervision-palier1-verificateurs.md | 05baa3efdf5b52bc976a8879014c5dbab7a2727dbfcb455969eba328aec63a79 | Section 5 : analyse prématurée du pilote déclarée nulle, garde ajoutée |
+| 2026-10-22 | palier1/puissance.py | d74b0666aeaf6bb9b85ef4e23a0f2b844f2a65c30a672641938c14698828e597 | Analyse de puissance : variances par strate, effectif plug-in et majoré (borne khi-deux 90 %), δ utile proposé 0,001 |
+| 2026-10-22 | tests/test_palier1_puissance.py | 0f1a1a678eff8de9b81b46e65fc1ef77c80d6a9b00335cf1012c7bbff6011ee5 | Tests de l'analyse de puissance |
+| 2026-10-22 | methode/boucle-de-supervision-palier1-puissance.md | 0bc536218cd27787e1669bdfe448d79153c1ef62d5798cc375f75154d1c4e9fd | Méthode, effet utile proposé (δ = 0,001, à valider avant lecture du pilote), règles de décision fixées avant le pilote |

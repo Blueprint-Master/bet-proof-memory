@@ -67,6 +67,30 @@ Si H-b se vérifie, le modèle dédié est sain du point de vue de la provenance
 
 **H-c. Plusieurs candidats sont proches du seuil.** G9 est retenu de justesse (15 sur 20). M5 (14), C6, G10 et G12 (13 chacun) et G13 (12) sont écartés de peu. La règle de stabilité 15 sur 20 est un choix déclaré. Une autre valeur de seuil changerait la composition du modèle sans changer la provenance.
 
+## 3 bis. Mesures du 22/10/2026 (faits)
+
+**Modèle final** : il n'est pas réduit au témoin. Sa pénalité vaut 0,01 : la valeur 0 a été écartée par le contrôle de séparation pendant la validation croisée. Probabilité moyenne de défaillance prévue pour les cas de 2020 : 2,144 % avec le modèle dédié, contre 2,121 % pour le témoin. Durée du calcul : 21 035 s.
+
+**Prévalence par origine** (cas de `candidats-c1.parquet`, aucune valeur manquante pour C8) :
+
+| Origine | Cas | C10 = 1 | G2 = 1 | C8 > 0 |
+|---|---|---|---|---|
+| 2018 | 601 493 | 0,12 % | 11,1 % | 50,5 % |
+| 2019 | 737 679 | 0,29 % | 23,0 % | 55,7 % |
+| 2020 | 807 183 | 0,48 % | 32,7 % | 67,4 % |
+
+**Ce que ces chiffres établissent.**
+- **H-a (C10) : la rareté se confirme.** C10 ne concerne que 0,12 % des cas de 2018, soit environ 720 sociétés, et sa fréquence quadruple d'ici 2020. Avec si peu de cas, il est attendu qu'il ne réduise pas la perte sur quatre plis sur cinq. Pourquoi sa fréquence augmente reste à établir.
+- **H-b (mesures d'urgence de 2020) : elle ne suffit pas.** La part de G2 double déjà entre 2018 et 2019 (de 11,1 % à 23,0 %). Or l'origine 2019 (30/09/2019) précède toute mesure liée à 2020. Ces mesures peuvent expliquer au plus une partie de la hausse de 2019 à 2020.
+
+**Nouvelle hypothèse H-d : une troncature de la source des ratios, qui biaise la population.** Les ratios ne sont denses qu'à partir des clôtures 2016 (protocole, P4). Or un cas n'existe que si la société a un bilan connu à t0 dans cette source. Conséquence :
+- **en 2018**, une société qui a cessé de déposer ses comptes avant 2016 n'a aucun bilan dans la source, donc n'entre pas dans la population ;
+- **avec les années**, l'historique s'allonge, et les sociétés silencieuses depuis plus de 450 jours peuvent y rester.
+
+Si H-d est vraie, G2 et C8 ne désignent pas la même sous-population en 2018 et en 2020 : c'est un artefact de la source, pas un fait économique. Le modèle dédié reste alors sain en provenance, mais il transporte vers 2020 un effet appris sur une population différente. Ce glissement touche à l'identique B, T1 et D. Il peut cependant aussi fausser les conclusions du premier cycle sur ces variables.
+
+**Test de H-d.** Comparer, par origine, l'ancienneté du bilan connu à t0, et la part de G2 selon cette ancienneté.
+
 ## 4. Suite
 
 1. Extraire du rapport les paramètres du modèle final et la moyenne des prévisions 2020, puis les inscrire ici.

@@ -37,6 +37,11 @@ import os
 import sys
 import time
 
+# Un seul fil de calcul par processus : avec plusieurs processus, les fils des bibliothèques
+# numériques se disputent les cœurs (charge 46 pour 12 cœurs observée le 22/10/2026).
+for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
+    os.environ.setdefault(_v, "1")
+
 import numpy as np
 
 ICI = os.path.dirname(os.path.abspath(__file__))

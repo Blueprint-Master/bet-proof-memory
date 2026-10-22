@@ -48,3 +48,12 @@ Soit environ 4 000 jetons d'entrée et 1 000 de sortie par cas sans retour. Avec
 - **Clé** : celle du serveur Blueprint (`~/blueprint-mcp-server/.env`), chargée dans la session d'exécution seulement, jamais écrite ailleurs.
 - **Budget du pilote** : plafond total de 600 appels de modèle (60 cas : T0 1 appel, T1 et B 6 au plus chacun, soit 780 au pire ; l'exécution s'arrête avant 600 et reprend sur décision). Estimation haute du coût : environ 2 $ au tarif indicatif, à confirmer sur la console Mistral.
 - **Essai à blanc** : les 10 premiers appels servent de contrôle de bout en bout. Sans anomalie, ils sont conservés dans le pilote ; s'ils révèlent un défaut du code, le fichier d'exécutions est supprimé, le défaut corrigé et publié, et le pilote relancé en entier.
+
+## 5. Constat du premier essai (22/10/2026) et ajustements
+
+Le premier appel a été refusé par l'interface (erreur 400, sans facturation). Deux faits établis par une requête minimale :
+
+- `mistral-large-4-0` exige `top_p = 1` avec une température 0 (échantillonnage glouton) : le paramètre est ajouté. La configuration reste déterministe au sens du fournisseur.
+- **`mistral-large-4-0` est un modèle à raisonnement** : sa réponse contient des blocs « thinking » suivis d'un bloc « text », et les jetons de raisonnement sont facturés comme jetons de sortie (71 sur 75 dans l'essai). Seul le bloc « text » est lu comme réponse ; le raisonnement n'est ni renvoyé au modèle dans les tours suivants ni conservé. Le nombre de jetons de raisonnement et les réponses tronquées sont relevés par exécution. La limite de sortie par appel passe de 1 500 à 4 000 jetons pour ne pas tronquer le raisonnement ; le plafond de 40 000 jetons par cas est inchangé et commun à T1 et B.
+
+Conséquence sur le coût : la sortie, plus chère, sera plus volumineuse que prévu. Le plafond total de 600 appels du pilote borne la dépense ; le coût réel sera mesuré et publié avant le principal.

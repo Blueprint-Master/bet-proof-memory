@@ -80,6 +80,7 @@ class Compteur:
         self.modele, self.plafond = modele, plafond
         self.appels = self.entree = self.sortie = 0
         self.servis = set()
+        self.raisonnement = self.tronques = 0
 
     def disponible(self) -> bool:
         return self.appels < self.plafond["appels_modele"] and self.entree + self.sortie < self.plafond["jetons"]
@@ -91,12 +92,15 @@ class Compteur:
         self.sortie += int(r.get("jetons_sortie", 0))
         if r.get("modele_servi"):
             self.servis.add(r["modele_servi"])
+        self.raisonnement += int(r.get("jetons_raisonnement", 0) or 0)
+        self.tronques += int(r.get("arret") in ("length", "max_tokens"))
         return r["texte"]
 
     def cout(self, journal_outils: list, debut: float) -> dict:
         return {"appels_outils": len(journal_outils), "appels_modele": self.appels, "jetons_entree": self.entree,
                 "jetons_sortie": self.sortie, "secondes": round(time.perf_counter() - debut, 3), "euros": 0.0,
-                "modeles_servis": sorted(self.servis)}
+                "modeles_servis": sorted(self.servis), "jetons_raisonnement": self.raisonnement,
+                "reponses_tronquees": self.tronques}
 
 
 def lire_json(texte):

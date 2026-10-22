@@ -232,15 +232,19 @@ class TestExecuteurEtAdaptateurs(unittest.TestCase):
             if "anthropic" in req.full_url:
                 return Rep({"content": [{"type": "text", "text": "ok"}], "usage": {"input_tokens": 7,
                                                                                     "output_tokens": 2}, "model": "m"})
-            return Rep({"choices": [{"message": {"content": "ok"}}], "usage": {"prompt_tokens": 7,
-                                                                               "completion_tokens": 2}})
+            return Rep({"choices": [{"finish_reason": "stop", "message": {"content": [
+                {"type": "thinking", "thinking": [{"type": "text", "text": "secret"}]}, {"type": "text", "text": "ok"}]}}],
+                "usage": {"prompt_tokens": 7, "completion_tokens": 2,
+                          "completion_tokens_details": {"reasoning_tokens": 1}}, "model": "m-1"})
 
         msgs = [{"role": "system", "content": "s"}, {"role": "user", "content": "a"}, {"role": "user", "content": "b"}]
         with mock.patch.dict(os.environ, {"CLE": "x"}), mock.patch("urllib.request.urlopen", faux):
             r1 = mo.CompatibleOpenAI("https://h/v1", "m-1", "CLE").appeler(msgs)
             r2 = mo.Anthropic("m-2", "CLE").appeler(msgs)
         self.assertEqual((r1["texte"], r1["jetons_entree"], r2["jetons_sortie"]), ("ok", 7, 2))
-        self.assertEqual(vus[0][1]["temperature"], 0)
+        self.assertEqual((vus[0][1]["temperature"], vus[0][1]["top_p"]), (0, 1))
+        self.assertEqual((r1["jetons_raisonnement"], r1["arret"]), (1, "stop"))
+        self.assertEqual(mo.texte_final("brut"), "brut")
         self.assertEqual(len(vus[0][1]["messages"]), 2)  # deux messages utilisateur fusionnés
         self.assertEqual(vus[1][1]["system"], "s")
         self.assertEqual(vus[1][1]["messages"], [{"role": "user", "content": "a\n\nb"}])

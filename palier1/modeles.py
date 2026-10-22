@@ -4,7 +4,7 @@ Deux familles d'interface, sans dépendance extérieure (urllib) :
   CompatibleOpenAI  POST {base}/chat/completions (Mistral, OpenAI, xAI, Gemini en mode compatible)
   Anthropic         POST https://api.anthropic.com/v1/messages
 La clé est lue dans une variable d'environnement, jamais écrite dans un fichier du dépôt.
-Température 0 ; version du modèle épinglée par son nom exact ; nombre maximal de jetons de
+Température 0 (avec top_p = 1, exigé par Mistral en échantillonnage glouton) ; version du modèle épinglée par son nom exact ; nombre maximal de jetons de
 sortie fixé. Un appel n'est compté qu'une fois réussi ; les erreurs 429 et 5xx sont reprises
 (attente 2, 4, 8, 16, 32 s), puis l'erreur est levée et l'exécution du cas s'arrête.
 """
@@ -17,7 +17,7 @@ import urllib.request
 
 from systemes import Modele
 
-SORTIE_MAX = 1500
+SORTIE_MAX = 4000
 REPRISES = (2, 4, 8, 16, 32)
 
 
@@ -50,6 +50,16 @@ def fusionner(messages: list) -> list:
     return out
 
 
+def texte_final(contenu) -> str:
+    """Texte de la réponse : chaîne simple, ou, pour un modèle à raisonnement, concaténation des
+    seuls blocs de type « text » (les blocs « thinking » ne sont ni rendus ni conservés)."""
+    if isinstance(contenu, str):
+        return contenu
+    if isinstance(contenu, list):
+        return "".join(b.get("text", "") for b in contenu if isinstance(b, dict) and b.get("type") == "text")
+    return ""
+
+
 class CompatibleOpenAI(Modele):
     def __init__(self, base: str, modele: str, cle_env: str):
         self.base, self.modele, self.cle_env = base.rstrip("/"), modele, cle_env
@@ -58,10 +68,14 @@ class CompatibleOpenAI(Modele):
     def appeler(self, messages: list) -> dict:
         cle = os.environ[self.cle_env]
         r = _post(f"{self.base}/chat/completions", {"Authorization": f"Bearer {cle}"},
-                  {"model": self.modele, "messages": fusionner(messages), "temperature": 0, "max_tokens": SORTIE_MAX})
+                  {"model": self.modele, "messages": fusionner(messages), "temperature": 0, "top_p": 1,
+                   "max_tokens": SORTIE_MAX})
         u = r.get("usage") or {}
-        return {"texte": r["choices"][0]["message"]["content"] or "", "jetons_entree": u.get("prompt_tokens", 0),
-                "jetons_sortie": u.get("completion_tokens", 0), "modele_servi": r.get("model")}
+        ch = r["choices"][0]
+        return {"texte": texte_final(ch["message"].get("content")), "jetons_entree": u.get("prompt_tokens", 0),
+                "jetons_sortie": u.get("completion_tokens", 0), "modele_servi": r.get("model"),
+                "arret": ch.get("finish_reason"),
+                "jetons_raisonnement": (u.get("completion_tokens_details") or {}).get("reasoning_tokens", 0)}
 
 
 class Anthropic(Modele):
@@ -78,4 +92,4 @@ class Anthropic(Modele):
         u = r.get("usage") or {}
         texte = "".join(b.get("text", "") for b in r.get("content", []) if b.get("type") == "text")
         return {"texte": texte, "jetons_entree": u.get("input_tokens", 0), "jetons_sortie": u.get("output_tokens", 0),
-                "modele_servi": r.get("model")}
+                "modele_servi": r.get("model"), "arret": r.get("stop_reason")}

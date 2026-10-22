@@ -79,6 +79,7 @@ class Compteur:
     def __init__(self, modele: Modele, plafond: dict):
         self.modele, self.plafond = modele, plafond
         self.appels = self.entree = self.sortie = 0
+        self.servis = set()
 
     def disponible(self) -> bool:
         return self.appels < self.plafond["appels_modele"] and self.entree + self.sortie < self.plafond["jetons"]
@@ -88,11 +89,14 @@ class Compteur:
         self.appels += 1
         self.entree += int(r.get("jetons_entree", 0))
         self.sortie += int(r.get("jetons_sortie", 0))
+        if r.get("modele_servi"):
+            self.servis.add(r["modele_servi"])
         return r["texte"]
 
     def cout(self, journal_outils: list, debut: float) -> dict:
         return {"appels_outils": len(journal_outils), "appels_modele": self.appels, "jetons_entree": self.entree,
-                "jetons_sortie": self.sortie, "secondes": round(time.perf_counter() - debut, 3), "euros": 0.0}
+                "jetons_sortie": self.sortie, "secondes": round(time.perf_counter() - debut, 3), "euros": 0.0,
+                "modeles_servis": sorted(self.servis)}
 
 
 def lire_json(texte):

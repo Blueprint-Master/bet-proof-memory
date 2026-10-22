@@ -41,3 +41,10 @@ Mesuré sur un dossier de taille réelle avec le modèle factice (caractères de
 | B | 2 (sans retour) à 4 | environ 1 700 à 4 300 | environ 400 à 800 |
 
 Soit environ 4 000 jetons d'entrée et 1 000 de sortie par cas sans retour. Avec une marge de 3 pour les comportements réels (plus de tours, justifications longues) : **pilote (60 cas) ≤ 0,75 M d'entrée et 0,2 M de sortie ; principal (340 cas) ≤ 4,2 M d'entrée et 1 M de sortie**. Le coût réel sera mesuré au pilote (M4), et le budget du principal soumis à validation.
+
+## 4. Modèle retenu (22/10/2026, avant le pilote)
+
+- **Modèle : `mistral-large-4-0`**, par l'interface `https://api.mistral.ai/v1/chat/completions`, température 0, sortie limitée à 1 500 jetons. Parmi les identifiants listés sur le compte le 22/10/2026 (`mistral-large-2512`, `mistral-large-4`, `mistral-large-4-0`, `mistral-large-latest`), c'est le plus précis ; les alias `mistral-large-4` et `mistral-large-latest` peuvent changer de cible et sont écartés. Mistral ne garantit pas par écrit qu'un identifiant versionné reste figé : le nom du modèle effectivement servi est relevé à chaque appel (`modeles_servis` dans chaque exécution), et tout changement en cours de route sera publié.
+- **Clé** : celle du serveur Blueprint (`~/blueprint-mcp-server/.env`), chargée dans la session d'exécution seulement, jamais écrite ailleurs.
+- **Budget du pilote** : plafond total de 600 appels de modèle (60 cas : T0 1 appel, T1 et B 6 au plus chacun, soit 780 au pire ; l'exécution s'arrête avant 600 et reprend sur décision). Estimation haute du coût : environ 2 $ au tarif indicatif, à confirmer sur la console Mistral.
+- **Essai à blanc** : les 10 premiers appels servent de contrôle de bout en bout. Sans anomalie, ils sont conservés dans le pilote ; s'ils révèlent un défaut du code, le fichier d'exécutions est supprimé, le défaut corrigé et publié, et le pilote relancé en entier.

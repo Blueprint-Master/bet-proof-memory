@@ -62,6 +62,7 @@ def executer(modele, dossiers: dict, lgd: float, qs: list, systemes: list, chemi
                 f.write(json.dumps(e, ensure_ascii=False, sort_keys=True) + "\n")
                 f.flush()
                 n += 1
+                print(f"{n} exécutions, {appels} appels de modèle ({s} {k})", file=sys.stderr, flush=True)
     return {"executions": n, "appels_modele": appels, "arret": None}
 
 

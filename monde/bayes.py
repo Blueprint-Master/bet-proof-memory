@@ -30,12 +30,18 @@ def contenu_sous(monde, source, h):
         return {v: etat.valeurs[monde.index(v)] for v, _ in monde.cand_A}
     if source == "rapport":
         return dict(monde.affiche)
-    if source == "journal":
-        return {"sous_produit": monde.cand_Z[h[2] - 1] if h[2] else None}
     return None
 
 
 def p_lecture(monde, source, contenu, h):
+    if source == "journal":
+        J = monde.vraisemblance_sources["journal"]
+        nom = contenu["sous_produit"]
+        if h[2]:
+            juste = monde.cand_Z[h[2] - 1]
+            return J["juste"] if nom == juste else (J["autre"] if nom is not None else
+                                                     1 - J["juste"] - J["autre"])
+        return J["fausse_alerte"] / 2 if nom is not None else 1 - J["fausse_alerte"]
     if source == "note":
         p1, p0 = monde.vraisemblance_sources["note"]
         p = p1 if h[0] else p0
@@ -46,6 +52,8 @@ def p_lecture(monde, source, contenu, h):
 def issues_lecture(monde, source, support):
     if source == "note":
         return [{"anomalie": True}, {"anomalie": False}]
+    if source == "journal":
+        return [{"sous_produit": x} for x in (None,) + tuple(monde.cand_Z)]
     vus = []
     for h in support:
         c = contenu_sous(monde, source, h)

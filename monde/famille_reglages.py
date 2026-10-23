@@ -8,8 +8,8 @@ conditions sur des réglages ; un témoin W sans rôle causal.
 Règles de famille (connues de R_Bayes, déterministes à partir de la partie publique) :
 - voie évidente : la voie atteinte par le plan optimal du monde tel que décrit ;
 - O : effet de bord caché croisé : l'action de réglage de l'une des deux variables de la voie
-  évidente éloigne l'autre d'un cran de sa condition (le plan décrit échoue quel que soit
-  l'ordre) ;
+  évidente éloigne l'autre d'un cran de sa condition et la grippe (elle ne se corrige plus,
+  sauf si elle était verrouillée avant) ; seul un essai préalable le révèle avant d'agir ;
 - A : la ligne fausse est l'une des deux variables de réglage de la voie évidente, sa valeur
   réelle est éloignée d'un cran de la satisfaction de sa condition ;
 - Z : levier sur l'une des deux premières actions (ordre des noms) portant sur les réglages
@@ -29,10 +29,11 @@ VARIABLES = REGLAGES + ("S",)
 DOMAINES = {**{r: (0, 4) for r in REGLAGES}, "S": (0, 3), "W": (0, 4)}
 COUTS = {"monter": 4, "descendre": 4, "verrouiller": 8, "stabiliser": 6}
 COUTS_OUTILS = {"mesurer": 1, "lire": 1, "essayer": 2, "attendre": 0}
-SOURCES = ("releve", "rapport", "note", "journal")
+SOURCES = ("rapport", "note", "journal")
 PROVENANCES = ("recent", "ancien", "memo")
 LOI = {"O": 0.5, "A": 0.5, "Z": 0.5, "I": 0.1, "rapport_provenance": 2.0}
 NOTE = (0.7, 0.3)  # P(la note signale une anomalie | O présent), idem | O absent
+JOURNAL = {"juste": 0.6, "autre": 0.1, "fausse_alerte": 0.3}  # loi du journal (voir bayes)
 P_ANOMALIE = 0.2
 MARGES = {"serre": (1, 2), "large": (4, 7)}
 
@@ -79,6 +80,22 @@ def _eloigner(cond, affiche):
         if lo <= c <= hi and c != affiche:
             return c
     raise Rejet("ligne fausse hors domaine")
+
+
+def _journal(rng, cand_Z, z):
+    """Indice bruité sur l'occasion : si elle existe, le journal nomme la bonne action avec la
+    probabilité 0,6, l'autre candidate 0,1, rien 0,3 ; sinon il nomme l'une des deux
+    candidates (fausse alerte) avec la probabilité 0,3."""
+    u = rng.random()
+    if z:
+        if u < JOURNAL["juste"]:
+            return cand_Z[z - 1]
+        if u < JOURNAL["juste"] + JOURNAL["autre"]:
+            return cand_Z[2 - z]
+        return None
+    if u < JOURNAL["fausse_alerte"]:
+        return cand_Z[0] if rng.random() < 0.5 else cand_Z[1]
+    return None
 
 
 def _lexique(rng):
@@ -128,7 +145,7 @@ def _tenter(rng, graine, facteurs, V, q, ident):
                 domaines=DOMAINES, affiche=affiche, provenances=provenances, actions=actions,
                 voies=tuple(voies), budget=80, echeance=10, V=V, valeur_z=0.2 * V, q=q, qe=q,
                 couts_outils=COUTS_OUTILS, sources=SOURCES, contenu_sources={},
-                vraisemblance_sources={"note": NOTE}, temoins=temoins, p_anomalie=P_ANOMALIE,
+                vraisemblance_sources={"note": NOTE, "journal": JOURNAL}, temoins=temoins, p_anomalie=P_ANOMALIE,
                 cand_O=(("", "S", 0), ("", "S", 0)), cand_A=(("R1", 0), ("R2", 0)),
                 cand_Z=("", ""), quantite_z=1, I_effet=("S", s_req - 1), loi=LOI,
                 h_vrai=H_DESCRIPTION)
@@ -183,10 +200,9 @@ def _tenter(rng, graine, facteurs, V, q, ident):
     note = {"anomalie": rng.random() < (NOTE[0] if o else NOTE[1])}
     vrai0 = initial_sous(prov.__class__(**{**base, "cand_A": cand_A}), (0, a_, 0, 0))
     contenu = {
-        "releve": {c.var: vrai0.valeurs[VARIABLES.index(c.var)] for c in regl},
         "rapport": dict(affiche),
         "note": note,
-        "journal": {"sous_produit": cand_Z[z - 1] if z else None},
+        "journal": {"sous_produit": _journal(rng, cand_Z, z)},
     }
     lexique = _lexique(rng)
     ordre = {"voies": rng.sample(range(3), 3), "variables": rng.sample(range(len(VARIABLES)), len(VARIABLES)),

@@ -66,15 +66,21 @@ def variables_evidentes(monde):
 
 
 class Prudente(Politique):
-    """Lit toutes les sources, mesure trois fois chaque variable de la voie évidente,
-    s'abstient si l'impossibilité est plus probable que non, sinon suit le plan de
-    l'hypothèse la plus probable, replanifié à chaque période."""
+    """Vérifie dans la limite de la marge de temps (échéance moins longueur du plan décrit) :
+    essaie d'abord chaque action distincte du plan décrit, puis mesure chaque variable de la voie
+    évidente ; s'abstient si l'impossibilité est plus probable que non, sinon suit le plan de
+    l'hypothèse la plus probable, replanifié à chaque période. (Redéfinie après le lot 2 : la
+    version de la v3, lire tout et mesurer trois fois, excédait toujours l'échéance.)"""
     nom = "prudente"
 
-    def __init__(self, monde, ev=None, repetitions=3):
+    def __init__(self, monde, ev=None):
         super().__init__(monde, ev)
-        self.file = [("lire", s) for s in monde.sources]
-        self.file += [("mesurer", v) for v in variables_evidentes(monde) for _ in range(repetitions)]
+        plan = Planificateur(monde, H_DESCRIPTION).plan(initial_sous(monde, H_DESCRIPTION), 0,
+                                                        monde.budget)
+        marge = max(0, monde.echeance - len(plan))
+        actions = list(dict.fromkeys(plan))
+        file = [("essayer", a) for a in actions] + [("mesurer", v) for v in variables_evidentes(monde)]
+        self.file = file[:marge]
 
     def commande(self, noeud):
         if self.file:

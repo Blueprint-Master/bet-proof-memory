@@ -73,6 +73,7 @@ class Monde:
     p_anomalie: float           # probabilité d'écart du témoin à une période donnée
     # candidats des emplacements latents (règle de famille)
     cand_O: tuple               # 2 x (action, variable touchée, delta) : effet de bord caché
+                                # qui éloigne la variable d'un cran et la grippe (verrou)
     cand_A: tuple               # 2 x (variable, valeur réelle si la ligne est fausse)
     cand_Z: tuple               # 2 x nom d'action qui rapporte Z
     quantite_z: int
@@ -161,8 +162,9 @@ def appliquer(monde, h, etat, nom):
             bouger(var, d)
     if h[0]:
         act, var, d = monde.cand_O[h[0] - 1]
-        if act == nom:
+        if act == nom and not verrous >> idx[var] & 1:
             bouger(var, d)
+            verrous |= 1 << idx[var]  # grippage : la variable touchée ne se corrige plus
     gain = 0
     if h[2] and monde.cand_Z[h[2] - 1] == nom and etat.z == 0:
         gain = monde.quantite_z

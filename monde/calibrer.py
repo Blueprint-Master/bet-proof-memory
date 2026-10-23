@@ -20,6 +20,7 @@ import hashlib
 import itertools
 import json
 import os
+import signal
 import statistics
 import time
 from multiprocessing import Pool
@@ -91,7 +92,30 @@ def jouer_tout(m, ev, g):
     return res
 
 
+PLAFOND_SECONDES = 900  # par monde (contrôles et parties) ; au-delà, journalisé et sauté
+
+
+class Depassement(Exception):
+    pass
+
+
+def _alarme(signum, frame):
+    raise Depassement()
+
+
 def tache(args):
+    signal.signal(signal.SIGALRM, _alarme)
+    signal.alarm(PLAFOND_SECONDES)
+    try:
+        return _tache(args)
+    except Depassement:
+        c, r, _, _ = args
+        return {"cellule": c, "replique": r, "rejets": [("depassement", f"{PLAFOND_SECONDES} s")]}
+    finally:
+        signal.alarm(0)
+
+
+def _tache(args):
     c, r, V, avec_jumeau = args
     m, ev, rap, rejets, g = accepter(c, r, V)
     sortie = {"cellule": c, "replique": r, "rejets": rejets}

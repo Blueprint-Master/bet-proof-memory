@@ -113,13 +113,25 @@ class TestFiltre(unittest.TestCase):
             tot = sum(p for p, _ in by.issues(m, n, cmd))
             self.assertAlmostEqual(tot, 1.0)
 
-    def test_lecture_du_releve_revele_A(self):
+    def test_lois_des_sources_normalisees(self):
         m = monde()
-        n = by.racine(m)
-        contenu = by.contenu_sous(m, "releve", m.h_vrai)
-        n2 = by.mettre_a_jour(m, n, ("lire", "releve"), contenu, 1)
-        pa = {a: sum(p for h, p in n2.b.items() if h[1] == a) for a in range(3)}
-        self.assertAlmostEqual(pa[m.h_vrai[1]], 1.0)
+        for h in mo.hypotheses():
+            for src in ("note", "journal"):
+                tot = sum(by.p_lecture(m, src, c, h) for c in by.issues_lecture(m, src, []))
+                self.assertAlmostEqual(tot, 1.0)
+
+    def test_grippage(self):
+        m = monde()
+        act, var, d = m.cand_O[0]
+        h = (1, 0, 0, 0)
+        e = mo.initial_sous(m, h)
+        e, _ = mo.appliquer(m, h, e, act)
+        i = m.index(var)
+        self.assertTrue(e.verrous >> i & 1)
+        avant = e.valeurs[i]
+        for a in m.actions:
+            if a.cible == var and not a.verrou:
+                self.assertEqual(mo.appliquer(m, h, e, a.nom)[0].valeurs[i], avant)
 
 
 class TestDescription(unittest.TestCase):

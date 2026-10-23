@@ -73,8 +73,10 @@ def _differe(monde, h1, h2, e1, e2):
             return ("agir", a.nom)
     for s in monde.sources:
         c1 = contenu_sous(monde, s, h1)
-        if s == "note":
-            if p_lecture(monde, s, {"anomalie": True}, h1) != p_lecture(monde, s, {"anomalie": True}, h2):
+        if s in ("note", "journal"):
+            issues = ([{"anomalie": True}] if s == "note" else
+                      [{"sous_produit": x} for x in (None,) + tuple(monde.cand_Z)])
+            if any(p_lecture(monde, s, c, h1) != p_lecture(monde, s, c, h2) for c in issues):
                 return ("lire", s)
         elif c1 != contenu_sous(monde, s, h2):
             return ("lire", s)
@@ -133,7 +135,7 @@ def decouvrabilite(monde, ev, facteur):
     if cmd[0] in ("mesurer", "essayer"):
         cout_ident = k * monde.couts_outils[cmd[0]]
     elif cmd[0] == "lire":
-        cout_ident = monde.couts_outils["lire"] * (1 if cmd[1] != "note" else k)
+        cout_ident = monde.couts_outils["lire"] * k  # sources bruitées
     else:
         cout_ident = 0.0  # l'action elle-même révèle (Z) : aucun coût d'information propre
     return {"identifiable": True, "accessible": accessible, "utile": vpi > cout_ident,
@@ -142,9 +144,7 @@ def decouvrabilite(monde, ev, facteur):
 
 def jumeaux(monde, jumeau):
     ok = tableau(monde) == tableau(jumeau) and texte(monde) == texte(jumeau)
-    ok = ok and all(contenu_sous(monde, s, monde.h_vrai) == contenu_sous(jumeau, s, jumeau.h_vrai)
-                    for s in monde.sources if s != "note")
-    ok = ok and monde.contenu_sources["note"] == jumeau.contenu_sources["note"]
+    ok = ok and monde.contenu_sources == jumeau.contenu_sources
     return ok, ""
 
 

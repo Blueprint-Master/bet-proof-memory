@@ -158,11 +158,13 @@ def controler(monde, ev=None):
         rapport[nom] = {"ok": ok, "detail": det}
         if not ok:
             return False, rapport
-    serre = monde.facteurs["marge"] == "serre"
     for fac, i in EMPLACEMENTS.items():
         if monde.h_vrai[i]:
             d = decouvrabilite(monde, ev, fac)
             rapport[f"decouvrabilite_{fac}"] = d
-            if not d["identifiable"] or not d["utile"] or (not d["accessible"] and not serre):
+            # amendement du 23/10 (lot 1) : seul un facteur non identifiable est rejeté ;
+            # l'accessibilité et l'utilité sont publiées, pas filtrées (le filtrage rejetait
+            # neuf mondes à obstacle sur dix et sélectionnait des mondes atypiques)
+            if not d["identifiable"]:
                 return False, rapport
     return True, rapport

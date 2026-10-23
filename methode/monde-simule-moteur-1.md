@@ -31,6 +31,30 @@ Chacun a été décidé avant tout jeu de politique sur les mondes de développe
 - **Découvrabilité (contrôle 4)** : « identifiable » vérifie qu'une commande au moins a une loi d'observation différente sous l'hypothèse vraie et sous l'hypothèse sans le facteur, le long de trois plans (décrit, vrai, alternatif) ; « utile » compare la valeur de l'information parfaite sur l'emplacement, à la racine et en boucle ouverte, au coût de la commande identifiante multipliée par le nombre de mesures du niveau de difficulté. C'est une approximation de la définition de la v3, à resserrer.
 - **R_Bayes** est une borne basse (politique réalisable) ; la borne haute est QMDP. L'écart entre les deux est publié.
 
-## 4. Premier lot de calibration
+## 4. Premier lot de calibration (un monde par case, 23/10/2026)
 
-[À COMPLÉTER À LA FIN DU LOT]
+Règle de V : coût moyen du chemin optimal 19,81 sur 32 mondes, V = 60. Lot : 32 cases, 29 pourvues (3 non pourvues après 40 essais), 4 jumeaux impossibles, 33 mondes joués. Sorties hors dépôt : `parties.jsonl` (311d2af2…), `regle_V.json` (0cd186aa…).
+
+| Politique | U moyenne |
+|---|---|
+| rapide (R_naïf) | − 2,9 |
+| prudente | − 7,0 |
+| inspection ciblée | 30,2 |
+| essai opportuniste | − 4,9 |
+| arrêt adaptatif | 21,9 |
+| R_explore | − 6,2 |
+| R_Bayes (approchée, borne basse) | 30,2 |
+| R∞ | 39,3 |
+| Borne haute QMDP (à la racine) | 40,9 |
+
+- **G** = 33,1, soit 0,55 V ; signal sur bruit 1,07 ; part des mondes où rapide et R_Bayes diffèrent de plus de 0,1 V : 67 %. Plancher de G et sensibilité de U tenus.
+- **Panel** : diversité tenue (ciblée meilleure dans 51 % des cases, arrêt adaptatif 28 %, rapide 11 %) ; **marge non tenue** : l'inspection ciblée égale R_Bayes (voir ci-dessous).
+- **Indépendance après rejet** : budget et échéance sans lien détectable avec O, A, Z (p de 0,50 à 0,81, 29 mondes : test peu puissant).
+- **Par facteur** : la politique rapide tombe à − 17 avec obstacle et − 18 avec ligne fausse ; R_Bayes tient (30 et 37) ; dans les mondes impossibles, R_Bayes fait − 21,5, moins bien que la politique prudente (− 6,8), et R∞ fait 0.
+
+**Constats.**
+
+1. **Le contrôle d'utilité sélectionnait les mondes.** 292 rejets « obstacle non utile » pour 13 mondes à obstacle acceptés (jusqu'à 32 essais pour une case) : les mondes à obstacle retenus étaient une minorité atypique, ce qui biaise le banc. Une valeur de l'information faible est une propriété légitime d'un monde (l'obstacle se répare après coup pour une action), pas un défaut. Les quatre jumeaux impossibles échouent au même contrôle : sous une probabilité a priori de 10 %, identifier l'impossibilité coûte plus que ce qu'elle épargne en espérance ; s'abstenir dès le départ n'est donc pas la conduite optimale, il faut s'arrêter quand l'impossibilité se manifeste en cours de route. **Amendement** (lot 2) : seul un facteur non identifiable entraîne un rejet ; accessibilité et valeur de l'information sont publiées, plus filtrées.
+2. **L'essai dominait la mesure.** Au même coût (1), l'essai renseigne sur toutes les variables à la fois ; R_Bayes et l'inspection ciblée n'ont jamais mesuré, les macro-mesures n'ont donc jamais servi et les deux politiques se confondent. **Amendement** (lot 2) : l'essai coûte 2, comme dans le projet initial (« coût moyen »).
+3. **R_Bayes approchée est faible.** 30,2 contre une borne haute de 40,9 : l'écart (0,32 G) est du même ordre que les effets à mesurer. Elle échoue surtout dans les mondes impossibles, faute de s'arrêter. G calculé avec elle est donc une borne basse. À traiter avant le préenregistrement : profondeur 2 ciblée, ou feuille en boucle fermée.
+4. **La politique prudente telle que spécifiée est condamnée** : quatre lectures et neuf mesures excèdent toujours l'échéance (plan décrit plus 1 à 7 périodes). Elle n'informe sur rien d'autre que cela.

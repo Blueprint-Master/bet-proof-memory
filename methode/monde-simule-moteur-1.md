@@ -80,3 +80,22 @@ G = 39,2 (0,65 V), signal sur bruit 1,34, sensibilité 72 % ; diversité du pane
 **Constat principal : l'obstacle caché, mécanisme central du banc, ne pèse presque rien dans cette famille.** Valeur de l'information parfaite sur l'obstacle : 0,59 en moyenne (utile dans 1 monde sur 31) ; avec obstacle, R_Bayes fait 43,8 et l'arrêt adaptatif 42,3, contre 45,9 pour R∞. Une politique qui suit un plan robuste et corrige après coup absorbe l'obstacle pour une action. **Deuxième constat : toute l'information passe par la lecture.** R_Bayes et l'inspection ciblée n'ont jamais mesuré ni essayé (267 actions, 51 lectures) : le relevé direct révèle la ligne fausse en une lecture, le journal révèle l'occasion sur Z. Le calibrage du bruit de mesure est donc sans objet en l'état. **Troisième constat** : dans les mondes impossibles, aucune politique à information incomplète ne s'arrête à temps (R_Bayes − 15,6, R∞ 3,4).
 
 **Conséquence** : avant tout mini-pilote du modèle de langage, la famille doit être reprise pour que l'obstacle coûte cher s'il n'est pas vu avant d'agir, et que la mesure et l'essai aient un rôle que la lecture ne remplit pas.
+
+## 6. Troisième lot (famille reprise, deux mondes par case)
+
+Changements : obstacle à grippage (l'action piégée éloigne l'autre variable de la voie évidente et la bloque), plus de relevé concluant (la ligne fausse ne se voit que par mesures bruitées), journal bruité, politique prudente bornée par la marge, plafond de durée par monde. Règle de V : 19,94, V = 60. Arrêté à 62 mondes sur 64 : deux mondes (cases 11 et 22) n'ont pas abouti en plus d'une heure, et le plafond de durée par monde ne s'est pas déclenché (processus presque inactifs : blocage du pool suspecté, cause non établie). 69 mondes joués, aucun rejet, jumeaux conformes 7 sur 7.
+
+| Politique | U moyenne | avec obstacle | sans obstacle |
+|---|---|---|---|
+| rapide | − 2,5 | − 15,0 | 13,0 |
+| prudente | 0,9 | 2,4 | 3,7 |
+| inspection ciblée | 33,7 | 42,3 | 36,6 |
+| essai opportuniste | − 5,8 | − 2,0 | − 7,2 |
+| arrêt adaptatif | 34,1 | 42,5 | 37,4 |
+| R_explore | − 6,3 | − 6,7 | − 6,0 |
+| R_Bayes (borne basse) | 33,7 | 42,4 | 36,6 |
+| R∞ | 41,5 | 45,9 | 45,6 |
+
+G = 36,2 (0,60 V), signal sur bruit 1,16, sensibilité 77 % ; diversité tenue (arrêt adaptatif 42 % des cases, ciblée 39 %, rapide 18 %) ; marge non tenue, et R_Bayes approchée ne domine plus l'arrêt adaptatif (34,1 contre 33,7).
+
+**L'obstacle reste inerte** : valeur de l'information parfaite 0,07 en moyenne, utile dans aucun des 31 mondes à obstacle ; avec obstacle, l'arrêt adaptatif fait 42,5 contre 45,9 pour R∞. La politique naïve, elle, en souffre (− 15,0). Interprétation (hypothèse, à vérifier sur les traces) : la famille offre toujours une couverture bon marché, soit par une autre voie de coût voisin, soit en dépassant le seuil d'une condition « au moins » ou « au plus » avant l'action piégée ; une politique qui choisit un plan robuste sous la loi a priori n'a pas besoin de savoir. Les politiques d'information ont tout de même commencé à mesurer (10 mesures, 20 lectures), contre aucune au lot 2. Dans les mondes impossibles, aucune politique à information incomplète ne s'arrête à temps (de − 6 à − 19).

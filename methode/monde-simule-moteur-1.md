@@ -58,3 +58,25 @@ Règle de V : coût moyen du chemin optimal 19,81 sur 32 mondes, V = 60. Lot : 3
 2. **L'essai dominait la mesure.** Au même coût (1), l'essai renseigne sur toutes les variables à la fois ; R_Bayes et l'inspection ciblée n'ont jamais mesuré, les macro-mesures n'ont donc jamais servi et les deux politiques se confondent. **Amendement** (lot 2) : l'essai coûte 2, comme dans le projet initial (« coût moyen »).
 3. **R_Bayes approchée est faible.** 30,2 contre une borne haute de 40,9 : l'écart (0,32 G) est du même ordre que les effets à mesurer. Elle échoue surtout dans les mondes impossibles, faute de s'arrêter. G calculé avec elle est donc une borne basse. À traiter avant le préenregistrement : profondeur 2 ciblée, ou feuille en boucle fermée.
 4. **La politique prudente telle que spécifiée est condamnée** : quatre lectures et neuf mesures excèdent toujours l'échéance (plan décrit plus 1 à 7 périodes). Elle n'informe sur rien d'autre que cela.
+
+## 5. Deuxième lot (deux mondes par case, après amendements du §4)
+
+Lot interrompu par la limite de durée des tâches de fond à 61 mondes sur 64 : trois mondes (cases 11, 15 et 22) n'ont pas abouti en cent minutes, alors que les 61 autres ont pris 21 minutes. Cause non établie (vraisemblablement une explosion de la programmation dynamique) ; un plafond de durée par monde, avec journalisation, est à ajouter. Sorties hors dépôt : `parties.jsonl` (empreinte au registre). 68 mondes joués (61 de base, 7 jumeaux impossibles), aucun rejet, jumeaux identiques et conformes 7 sur 7.
+
+| Politique | U moyenne |
+|---|---|
+| rapide | − 3,1 |
+| prudente | − 7,0 |
+| inspection ciblée | 36,2 |
+| essai opportuniste | − 4,8 |
+| arrêt adaptatif | 34,0 |
+| R_explore | − 6,0 |
+| R_Bayes (borne basse) | 36,2 |
+| R∞ | 41,5 |
+| Borne haute QMDP | 41,5 |
+
+G = 39,2 (0,65 V), signal sur bruit 1,34, sensibilité 72 % ; diversité du panel tenue (ciblée 61 % des cases, arrêt adaptatif 24 %, rapide 12 %), marge non tenue (ciblée = R_Bayes) ; indépendance : budget et ligne fausse p = 0,053, à surveiller.
+
+**Constat principal : l'obstacle caché, mécanisme central du banc, ne pèse presque rien dans cette famille.** Valeur de l'information parfaite sur l'obstacle : 0,59 en moyenne (utile dans 1 monde sur 31) ; avec obstacle, R_Bayes fait 43,8 et l'arrêt adaptatif 42,3, contre 45,9 pour R∞. Une politique qui suit un plan robuste et corrige après coup absorbe l'obstacle pour une action. **Deuxième constat : toute l'information passe par la lecture.** R_Bayes et l'inspection ciblée n'ont jamais mesuré ni essayé (267 actions, 51 lectures) : le relevé direct révèle la ligne fausse en une lecture, le journal révèle l'occasion sur Z. Le calibrage du bruit de mesure est donc sans objet en l'état. **Troisième constat** : dans les mondes impossibles, aucune politique à information incomplète ne s'arrête à temps (R_Bayes − 15,6, R∞ 3,4).
+
+**Conséquence** : avant tout mini-pilote du modèle de langage, la famille doit être reprise pour que l'obstacle coûte cher s'il n'est pas vu avant d'agir, et que la mesure et l'essai aient un rôle que la lecture ne remplit pas.
